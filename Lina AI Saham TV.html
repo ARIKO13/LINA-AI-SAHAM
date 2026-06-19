@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lina AI - Analisis Saham Buat Pemula</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0e17;
+            color: #e1e5eb;
+        }
+        .glow-green { box-shadow: 0 0 10px rgba(34,197,94,0.5); }
+        .glow-red { box-shadow: 0 0 10px rgba(239,68,68,0.5); }
+        .signal-strong-buy { background: linear-gradient(135deg, rgba(34,197,94,0.25), rgba(34,197,94,0.05)); border: 1px solid rgba(34,197,94,0.6); }
+        .signal-buy { background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.02)); border: 1px solid rgba(34,197,94,0.3); }
+        .signal-hold { background: linear-gradient(135deg, rgba(156,163,175,0.12), rgba(156,163,175,0.02)); border: 1px solid rgba(156,163,175,0.3); }
+        .signal-sell { background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.02)); border: 1px solid rgba(239,68,68,0.3); }
+        .signal-strong-sell { background: linear-gradient(135deg, rgba(239,68,68,0.25), rgba(239,68,68,0.05)); border: 1px solid rgba(239,68,68,0.6); }
+        .scroll-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+        .scroll-thin::-webkit-scrollbar-track { background: #111827; }
+        .scroll-thin::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        .scroll-thin::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+        .pulse-dot { animation: pulse-dot 2s infinite; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .fade-in { animation: fadeIn 0.4s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .signal-card { transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<!-- ============ HEADER ============ -->
+<header class="sticky top-0 z-50 bg-[#0d1320] border-b border-gray-800 px-4 py-3 shadow-lg">
+    <div class="max-w-[1800px] mx-auto flex flex-wrap items-center gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center font-bold text-lg text-white">L</div>
+            <div>
+                <h1 class="text-lg font-bold text-white leading-tight">Lina AI</h1>
+                <p class="text-xs text-gray-500">Analisis Saham Buat Pemula</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap bg-[#111827] p-2 rounded-xl border border-gray-800">
+            <select id="marketSelect" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 font-semibold">
+                <option value="NASDAQ">NASDAQ</option>
+                <option value="IDX">IHSG (IDX)</option>
+                <option value="CRYPTO">CRYPTO</option>
+            </select>
+            
+            <div class="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus-within:border-blue-500 transition">
+                <span class="text-xs text-gray-500">Kode:</span>
+                <input type="text" id="symbolInput" value="AAPL" class="bg-transparent text-sm focus:outline-none w-28 font-mono uppercase" placeholder="Ketik kode...">
+            </div>
+            
+            <button id="loadChartBtn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition">
+                Cari
+            </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <select id="intervalSelect" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                <option value="15">15m</option>
+                <option value="60" selected>1H</option>
+                <option value="240">4H</option>
+                <option value="D">1D</option>
+                <option value="W">1W</option>
+            </select>
+        </div>
+
+        <div class="flex items-center gap-2 ml-auto">
+            <button id="screenerScanBtn" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Scan
+            </button>
+            <span id="screenerCount" class="text-xs text-gray-500 hidden md:inline"></span>
+            <button id="notifBtn" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-2 rounded-lg text-sm transition" title="Aktifkan Notifikasi">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- ============ MAIN ============ -->
+<main class="max-w-[1800px] mx-auto p-4 space-y-4">
+
+    <!-- ===== ROW 1: TradingView + Kesimpulan Awam ===== -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- TradingView -->
+        <div class="lg:col-span-2 bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden flex flex-col" style="height: 650px;">
+            <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-800">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
+                    <h2 class="text-sm font-semibold text-gray-300">Grafik Harga Real-time</h2>
+                </div>
+                <span id="tvSymbolLabel" class="text-xs text-gray-500 font-mono">NASDAQ:AAPL</span>
+            </div>
+            <div id="tradingview-chart" class="flex-1 relative"></div>
+        </div>
+
+        <!-- Kesimpulan Analisis Buat Pemula -->
+        <div class="lg:col-span-1 bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden flex flex-col" style="height: 650px;">
+            <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-800">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                    <h2 class="text-sm font-semibold text-gray-300">Kesimpulan Analisis</h2>
+                </div>
+                <select id="rangeSelect" class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs focus:outline-none">
+                    <option value="3mo">3 Bln</option>
+                    <option value="6mo">6 Bln</option>
+                    <option value="1y" selected>1 Thn</option>
+                    <option value="2y">2 Thn</option>
+                </select>
+            </div>
+
+            <div id="yahooChartContainer" class="relative" style="height: 220px;">
+                <div id="yahooChart" class="w-full h-full"></div>
+                <div id="chartLoading" class="absolute inset-0 flex items-center justify-center bg-[#0d1320] z-10">
+                    <div class="text-center">
+                        <div class="inline-block w-8 h-8 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mb-2"></div>
+                        <p class="text-xs text-gray-500">Memuat data...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KESIMPULAN BAHASA AWAM -->
+            <div class="flex-1 overflow-y-auto scroll-thin p-4 space-y-3">
+                <div id="simpleSignalCard" class="signal-hold rounded-xl p-4 text-center transition-all duration-300">
+                    <div class="text-xs text-gray-500 uppercase tracking-wider mb-1">Saran Tindakan</div>
+                    <div id="simpleSignalIcon" class="text-3xl mb-1">⚪</div>
+                    <div id="simpleSignalText" class="text-xl font-bold mb-1">TUNGGU DULU</div>
+                    <div id="simpleSignalScore" class="text-[10px] text-gray-500">Skor: 0/10</div>
+                </div>
+
+                <div class="space-y-2 text-sm">
+                    <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-blue-400">📈</span>
+                            <span class="text-xs font-semibold text-gray-400 uppercase">Tren Harga (EMA)</span>
+                        </div>
+                        <p id="trendSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                    </div>
+
+                    <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-yellow-400">⚖️</span>
+                            <span class="text-xs font-semibold text-gray-400 uppercase">Antrian Beli/Jual (RSI)</span>
+                        </div>
+                        <p id="rsiSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                    </div>
+
+                    <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-purple-400">⚡</span>
+                            <span class="text-xs font-semibold text-gray-400 uppercase">Tenaga Market (MACD)</span>
+                        </div>
+                        <p id="macdSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                    </div>
+
+                    <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-green-400">🎯</span>
+                            <span class="text-xs font-semibold text-gray-400 uppercase">Posisi Harga (Bollinger)</span>
+                        </div>
+                        <p id="bbSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-gray-700/50 flex items-center justify-between text-xs">
+                    <span class="text-gray-500">Diperbarui:</span>
+                    <span id="signalTime" class="text-gray-400">—</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== ROW 2: Screener Simplified ===== -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        <!-- Crypto Screener -->
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden flex flex-col" style="max-height: 450px;">
+            <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-800 bg-gray-800/30">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <h2 class="text-sm font-semibold text-gray-300">Crypto</h2>
+                </div>
+            </div>
+            <div class="overflow-y-auto scroll-thin flex-1">
+                <table class="w-full text-xs">
+                    <thead class="sticky top-0 bg-[#0d1320]">
+                        <tr class="text-gray-500 border-b border-gray-800">
+                            <th class="text-left px-3 py-2 font-medium">Aset & Kesimpulan</th>
+                            <th class="text-center px-3 py-2 font-medium">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="screenerBodyCrypto"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- US Stocks Screener -->
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden flex flex-col" style="max-height: 450px;">
+            <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-800 bg-gray-800/30">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                    <h2 class="text-sm font-semibold text-gray-300">Saham US (NASDAQ)</h2>
+                </div>
+            </div>
+            <div class="overflow-y-auto scroll-thin flex-1">
+                <table class="w-full text-xs">
+                    <thead class="sticky top-0 bg-[#0d1320]">
+                        <tr class="text-gray-500 border-b border-gray-800">
+                            <th class="text-left px-3 py-2 font-medium">Aset & Kesimpulan</th>
+                            <th class="text-center px-3 py-2 font-medium">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="screenerBodyUS"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- IHSG Screener -->
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden flex flex-col" style="max-height: 450px;">
+            <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-800 bg-gray-800/30">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-green-400"></span>
+                    <h2 class="text-sm font-semibold text-gray-300">Saham IHSG (IDX)</h2>
+                </div>
+            </div>
+            <div class="overflow-y-auto scroll-thin flex-1">
+                <table class="w-full text-xs">
+                    <thead class="sticky top-0 bg-[#0d1320]">
+                        <tr class="text-gray-500 border-b border-gray-800">
+                            <th class="text-left px-3 py-2 font-medium">Aset & Kesimpulan</th>
+                            <th class="text-center px-3 py-2 font-medium">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="screenerBodyIDX"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== ROW 3: Signal Log + Auto Scan ===== -->
+    <section class="grid grid-cols-1 gap-4">
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden flex flex-col" style="max-height: 300px;">
+            <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-800">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                    <h2 class="text-sm font-semibold text-gray-300">Notifikasi Sinyal Masuk</h2>
+                </div>
+                <div class="flex items-center gap-4">
+                    <label class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
+                        <input type="checkbox" id="autoScanCheck" class="rounded bg-gray-800 border-gray-700 text-emerald-500 focus:ring-emerald-500">
+                        Auto-scan 5 menit
+                    </label>
+                    <button id="clearSignalsBtn" class="text-xs text-gray-500 hover:text-gray-300 px-2 py-1 border border-gray-700 rounded">Clear Log</button>
+                </div>
+            </div>
+            <div id="signalLog" class="flex-1 overflow-y-auto scroll-thin p-3 space-y-2">
+                <p class="text-xs text-gray-600 text-center py-4">Belum ada sinyal terdeteksi</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="text-center py-4 text-xs text-gray-600">
+    <p>Lina AI — Analisis Lindung Nilai | Pemula Friendly</p>
+    <p class="mt-1">Data: Yahoo Finance API | Chart: TradingView Widget | Bukan saran investasi</p>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  KONFIGURASI & SCREENER LIST
+// ═══════════════════════════════════════════════════════════
+const SCREENER_SYMBOLS = [
+    { market: 'CRYPTO', unified: 'BTCUSD',  name: 'Bitcoin' },
+    { market: 'CRYPTO', unified: 'ETHUSD',  name: 'Ethereum' },
+    { market: 'CRYPTO', unified: 'BNBUSD',  name: 'BNB' },
+    { market: 'CRYPTO', unified: 'SOLUSD',  name: 'Solana' },
+    { market: 'CRYPTO', unified: 'XRPUSD',  name: 'XRP' },
+    { market: 'CRYPTO', unified: 'DOGEUSD', name: 'Dogecoin' },
+    
+    { market: 'NASDAQ', unified: 'AAPL',    name: 'Apple' },
+    { market: 'NASDAQ', unified: 'TSLA',    name: 'Tesla' },
+    { market: 'NASDAQ', unified: 'NVDA',    name: 'NVIDIA' },
+    { market: 'NASDAQ', unified: 'AMZN',    name: 'Amazon' },
+    { market: 'NASDAQ', unified: 'MSFT',    name: 'Microsoft' },
+    { market: 'NASDAQ', unified: 'META',    name: 'Meta' },
+    
+    { market: 'IDX',    unified: 'BBCA',    name: 'Bank BCA' },
+    { market: 'IDX',    unified: 'BBRI',    name: 'Bank BRI' },
+    { market: 'IDX',    unified: 'TLKM',    name: 'Telkom' },
+    { market: 'IDX',    unified: 'GOTO',    name: 'GoTo' },
+    { market: 'IDX',    unified: 'ASII',    name: 'Astra' },
+    { market: 'IDX',    unified: 'BMRI',    name: 'Bank Mandiri' }
+];
+
+let currentTVSymbol = '', currentYahooSymbol = '';
+let yahooChart = null, candleSeries = null, ema50Series = null, ema200Series = null, bbUpperSeries = null, bbLowerSeries = null, volumeSeries = null;
+let lastSignals = {}, autoScanInterval = null, notificationsEnabled = false;
+
+// ═══════════════════════════════════════════════════════════
+//  FUNGSI MAPPING & PENCARIAN
+// ═══════════════════════════════════════════════════════════
+function mapSymbol(market, unified) {
+    let sym = unified.toUpperCase().replace('.JK', '').replace('=X', '');
+    let tv = '', yahoo = '';
+    if (market === 'NASDAQ') { tv = `NASDAQ:${sym}`; yahoo = sym; } 
+    else if (market === 'IDX') { tv = `IDX:${sym}`; yahoo = `${sym}.JK`; } 
+    else if (market === 'CRYPTO') {
+        let coin = sym.replace(/(USDT|BUSD|USD)$/, '');
+        tv = `BINANCE:${coin}USDT`; yahoo = `${coin}-USD`;
+    } else { tv = `NASDAQ:${sym}`; yahoo = sym; }
+    return { tv, yahoo, name: sym };
+}
+
+function loadFromInput() {
+    const market = document.getElementById('marketSelect').value;
+    const val = document.getElementById('symbolInput').value.trim().toUpperCase();
+    if (!val) return;
+    const mapped = mapSymbol(market, val);
+    currentTVSymbol = mapped.tv;
+    currentYahooSymbol = mapped.yahoo;
+    let interval = document.getElementById('intervalSelect').value;
+    if (market === 'IDX' && ['15', '60', '240'].includes(interval)) {
+        interval = 'D';
+        document.getElementById('intervalSelect').value = 'D';
+    }
+    document.getElementById('tvSymbolLabel').textContent = currentTVSymbol;
+    loadTradingViewChart(currentTVSymbol, interval);
+    loadAnalysis();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INDIKATOR TEKNIKAL
+// ═══════════════════════════════════════════════════════════
+function calculateSMA(d, p) { const r = new Array(d.length).fill(null); for (let i=p-1;i<d.length;i++){let s=0;for(let j=0;j<p;j++)s+=d[i-j];r[i]=s/p;} return r; }
+function calculateEMA(d, p) { const r = new Array(d.length).fill(null); const m = 2/(p+1); let e=null; for(let i=0;i<d.length;i++){if(i<p-1)continue;else if(i===p-1){let s=0;for(let j=0;j<p;j++)s+=d[i-j];e=s/p;r[i]=e;}else{e=(d[i]-e)*m+e;r[i]=e;}} return r; }
+function calculateRSI(d, p=14) { const r = new Array(d.length).fill(null); let ag=0,al=0; for(let i=1;i<d.length;i++){const c=d[i]-d[i-1];const g=c>0?c:0,l=c<0?Math.abs(c):0;if(i<=p){ag+=g;al+=l;if(i===p){ag/=p;al/=p;r[i]=100-(100/(1+(al===0?100:ag/al)));}}else{ag=(ag*(p-1)+g)/p;al=(al*(p-1)+l)/p;r[i]=100-(100/(1+(al===0?100:ag/al)));}} return r; }
+function calculateMACD(d, f=12, s=26, sig=9) { const ef=calculateEMA(d,f),es=calculateEMA(d,s); const ml=d.map((_,i)=>(ef[i]!==null&&es[i]!==null)?ef[i]-es[i]:null); const vs=ml.findIndex(v=>v!==null); const mv=ml.slice(vs),sv=calculateEMA(mv,sig); const sl=new Array(d.length).fill(null); for(let i=0;i<sv.length;i++)if(sv[i]!==null)sl[vs+i]=sv[i]; const h=d.map((_,i)=>(ml[i]!==null&&sl[i]!==null)?ml[i]-sl[i]:null); return {macdLine:ml,signalLine:sl,histogram:h}; }
+function calculateBB(d, p=20, dev=2) { const m=calculateSMA(d,p); const u=new Array(d.length).fill(null),l=new Array(d.length).fill(null); for(let i=p-1;i<d.length;i++){if(m[i]===null)continue;let sq=0;for(let j=0;j<p;j++)sq+=Math.pow(d[i-j]-m[i],2);const sd=Math.sqrt(sq/p);u[i]=m[i]+dev*sd;l[i]=m[i]-dev*sd;} return {middle:m,upper:u,lower:l}; }
+
+// ═══════════════════════════════════════════════════════════
+//  FETCH DATA
+// ═══════════════════════════════════════════════════════════
+async function fetchYahooData(symbol, interval = '1d', range = '1y') {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+    const proxies = [
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+        `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+        `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`
+    ];
+    for (const p of proxies) {
+        try {
+            const r = await fetch(p);
+            if (!r.ok) continue;
+            const j = await r.json();
+            if (!j.chart || !j.chart.result || !j.chart.result[0]) continue;
+            const res = j.chart.result[0], t = res.timestamp || [], q = res.indicators.quote[0], c = [];
+            for (let i = 0; i < t.length; i++) {
+                if (q.open[i] == null || q.close[i] == null) continue;
+                c.push({ time: t[i], open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i], volume: q.volume[i] || 0 });
+            } return { candles: c };
+        } catch (e) {}
+    } throw new Error(`Gagal fetch ${symbol}`);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SIGNAL GENERATOR BAHASA AWAM
+// ═══════════════════════════════════════════════════════════
+function generateSimpleSignal(c, ind) {
+    const li = c.length - 1, cl = c[li].close;
+    const e50 = ind.ema50[li], e200 = ind.ema200[li], rsi = ind.rsi[li];
+    const mv = ind.macd.macdLine[li], sv = ind.macd.signalLine[li], hv = ind.macd.histogram[li];
+    const u = ind.bb.upper[li], l = ind.bb.lower[li], m = ind.bb.middle[li];
+    let sc = 0, rs = [];
+    
+    // 1. TREND (EMA)
+    let trendText = "Tren belum jelas.";
+    if (e50 !== null && e200 !== null) {
+        if (e50 > e200) { sc += 2; trendText = "Lagi naik (Uptrend). Banyak yang semangat beli."; rs.push("✅ Tren naik"); } 
+        else { sc -= 2; trendText = "Lagi turun (Downtrend). Banyak yang panik jual."; rs.push("❌ Tren turun"); }
+    }
+
+    // 2. RSI (Kejenuhan)
+    let rsiText = "Harga masih wajar.";
+    if (rsi !== null) {
+        if (rsi < 30) { sc += 2; rsiText = "Harga lagi murah banget (Oversold). Peluang beli."; rs.push("✅ Harga murah"); } 
+        else if (rsi > 70) { sc -= 2; rsiText = "Harga lagi mahal banget (Overbought). Hati-hati jatuh."; rs.push("❌ Harga mahal"); } 
+        else if (rsi < 45) { sc += 1; rsiText = "Harga mulai murah, ada peluang."; } 
+        else if (rsi > 55) { sc -= 1; rsiText = "Harga mulai mahal, hati-hati."; } 
+    }
+
+    // 3. MACD (Momentum)
+    let macdText = "Tenaga market seimbang.";
+    if (mv !== null && sv !== null) {
+        if (mv > sv && hv > 0) { sc += 2; macdText = "Pembeli lagi kuat, harga siap naik."; rs.push("✅ Pembeli kuat"); } 
+        else if (mv < sv && hv < 0) { sc -= 2; macdText = "Penjual lagi kuat, harga siap turun."; rs.push("❌ Penjual kuat"); } 
+    }
+
+    // 4. Bollinger Bands
+    let bbText = "Harga di jalur normal.";
+    if (u !== null && l !== null) {
+        if (cl < l) { sc += 1; bbText = "Harga nabrak batas bawah, biasanya bakal mantul naik."; rs.push("✅ Mantul bawah"); } 
+        else if (cl > u) { sc -= 1; bbText = "Harga nabrak batas atas, biasanya bakal koreksi turun."; rs.push("❌ Mantul atas"); } 
+    }
+    
+    // Final Signal
+    let sig, ic, cn, simpleText;
+    if (sc >= 4) { sig = "STRONG BUY"; ic = "🟢"; cn = "signal-strong-buy"; simpleText = "BELI SEKARANG!"; }
+    else if (sc >= 2) { sig = "BUY"; ic = "🟩"; cn = "signal-buy"; simpleText = "BOLEH BELI / TAHAN"; }
+    else if (sc > -2) { sig = "HOLD"; ic = "⚪"; cn = "signal-hold"; simpleText = "TUNGGU DULU"; }
+    else if (sc > -4) { sig = "SELL"; ic = "🟥"; cn = "signal-sell"; simpleText = "JUAL / JANGAN BELI"; }
+    else { sig = "STRONG SELL"; ic = "🔴"; cn = "signal-strong-sell"; simpleText = "JUAL SEGERA!"; }
+    
+    return { signal: sig, simpleText, icon: ic, className: cn, score: sc, reasons: rs, trendText, rsiText, macdText, bbText, close: cl };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TRADINGVIEW WIDGET
+// ═══════════════════════════════════════════════════════════
+function loadTradingViewChart(symbol, interval) {
+    document.getElementById('tvSymbolLabel').textContent = symbol;
+    const c = document.getElementById('tradingview-chart');
+    c.innerHTML = '';
+    const w = document.createElement('div');
+    w.className = 'tradingview-widget-container';
+    w.style.height = '100%'; w.style.width = '100%';
+    const d = document.createElement('div');
+    d.className = 'tradingview-widget-container__widget';
+    d.style.height = '100%'; d.style.width = '100%'; d.style.position = 'absolute';
+    w.appendChild(d);
+    const s = document.createElement('script');
+    s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+    s.async = true;
+    s.innerHTML = JSON.stringify({
+        autosize: true, symbol, interval, timezone: "Asia/Jakarta", theme: "dark", style: "1", locale: "id",
+        enable_publishing: false, hide_side_toolbar: false, allow_symbol_change: true,
+        studies: ["STD;EMA", "STD;EMA", "STD;RSI", "STD;MACD", "STD;Bollinger_Bands"],
+        studies_overrides: { "0.length": 50, "0.Plot.color": "#3b82f6", "1.length": 200, "1.Plot.color": "#ef4444" }
+    });
+    w.appendChild(s);
+    c.appendChild(w);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  YAHOO CHART INIT & UPDATE
+// ═══════════════════════════════════════════════════════════
+function initYahooChart() {
+    const c = document.getElementById('yahooChart');
+    if (yahooChart) yahooChart.remove();
+    yahooChart = LightweightCharts.createChart(c, {
+        width: c.clientWidth, height: c.clientHeight,
+        layout: { background: { color: '#0d1320' }, textColor: '#9ca3af', fontSize: 10 },
+        grid: { vertLines: { color: 'rgba(55,65,81,0.3)' }, horzLines: { color: 'rgba(55,65,81,0.3)' } },
+        rightPriceScale: { borderColor: 'rgba(55,65,81,0.5)', scaleMargins: { top: 0.05, bottom: 0.25 } },
+        timeScale: { borderColor: 'rgba(55,65,81,0.5)', timeVisible: true }
+    });
+    candleSeries = yahooChart.addCandlestickSeries({ upColor: '#22c55e', downColor: '#ef4444' });
+    ema50Series = yahooChart.addLineSeries({ color: '#3b82f6', lineWidth: 2 });
+    ema200Series = yahooChart.addLineSeries({ color: '#ef4444', lineWidth: 2 });
+    bbUpperSeries = yahooChart.addLineSeries({ color: 'rgba(156,163,175,0.5)', lineWidth: 1, lineStyle: 2 });
+    bbLowerSeries = yahooChart.addLineSeries({ color: 'rgba(156,163,175,0.5)', lineWidth: 1, lineStyle: 2 });
+    volumeSeries = yahooChart.addHistogramSeries({ color: 'rgba(75,85,99,0.5)', priceFormat: { type: 'volume' }, priceScaleId: '', scaleMargins: { top: 0.8, bottom: 0 } });
+    new ResizeObserver(() => { if (yahooChart && c.clientWidth > 0) yahooChart.applyOptions({ width: c.clientWidth, height: c.clientHeight }); }).observe(c);
+}
+
+function updateYahooChart(candles, ind) {
+    if (!candleSeries) return;
+    candleSeries.setData(candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })));
+    volumeSeries.setData(candles.map(c => ({ time: c.time, value: c.volume, color: c.close >= c.open ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)' })));
+    const mapD = (arr) => candles.map((c, i) => arr[i] !== null ? { time: c.time, value: arr[i] } : null).filter(v => v !== null);
+    ema50Series.setData(mapD(ind.ema50));
+    ema200Series.setData(mapD(ind.ema200));
+    bbUpperSeries.setData(mapD(ind.bb.upper));
+    bbLowerSeries.setData(mapD(ind.bb.lower));
+    yahooChart.timeScale().fitContent();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UI UPDATES (AWAM)
+// ═══════════════════════════════════════════════════════════
+function updateAnalysisPanel(candles, ind, sig) {
+    const sC = document.getElementById('simpleSignalCard');
+    sC.className = `${sig.className} rounded-xl p-4 text-center transition-all duration-300`;
+    document.getElementById('simpleSignalIcon').textContent = sig.icon;
+    document.getElementById('simpleSignalText').textContent = sig.simpleText;
+    document.getElementById('simpleSignalScore').textContent = `Skor: ${sig.score}/10`;
+    
+    document.getElementById('trendSimple').textContent = sig.trendText;
+    document.getElementById('rsiSimple').textContent = sig.rsiText;
+    document.getElementById('macdSimple').textContent = sig.macdText;
+    document.getElementById('bbSimple').textContent = sig.bbText;
+    document.getElementById('signalTime').textContent = new Date().toLocaleTimeString('id-ID');
+}
+
+async function loadAnalysis() {
+    const l = document.getElementById('chartLoading');
+    l.style.display = 'flex';
+    l.innerHTML = `<div class="text-center"><div class="inline-block w-8 h-8 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mb-2"></div><p class="text-xs text-gray-500">Memuat data...</p></div>`;
+    try {
+        const range = document.getElementById('rangeSelect').value;
+        const { candles } = await fetchYahooData(currentYahooSymbol, '1d', range);
+        if (candles.length < 30) throw new Error('Data tidak cukup');
+        const closes = candles.map(c => c.close);
+        const ind = { ema50: calculateEMA(closes, 50), ema200: calculateEMA(closes, 200), rsi: calculateRSI(closes, 14), macd: calculateMACD(closes, 12, 26, 9), bb: calculateBB(closes, 20, 2) };
+        const sig = generateSimpleSignal(candles, ind);
+        updateYahooChart(candles, ind);
+        updateAnalysisPanel(candles, ind, sig);
+        l.style.display = 'none';
+    } catch (e) {
+        l.innerHTML = `<div class="text-center"><p class="text-xs text-red-400">Gagal memuat</p><p class="text-xs text-gray-500 mt-1">${e.message}</p></div>`;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SCREENER LOGIC
+// ═══════════════════════════════════════════════════════════
+async function runScreener() {
+    const btn = document.getElementById('screenerScanBtn');
+    btn.disabled = true; 
+    btn.innerHTML = `<div class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>`;
+    document.getElementById('screenerCount').textContent = "Scanning...";
+    
+    ['screenerBodyCrypto', 'screenerBodyUS', 'screenerBodyIDX'].forEach(id => {
+        document.getElementById(id).innerHTML = `<tr><td colspan="2" class="text-center py-6 text-gray-500">Scanning...</td></tr>`;
+    });
+
+    const results = []; let cp = 0;
+    for (let i = 0; i < SCREENER_SYMBOLS.length; i += 3) {
+        const batch = SCREENER_SYMBOLS.slice(i, i + 3);
+        const br = await Promise.allSettled(batch.map(async (sym) => {
+            const mapped = mapSymbol(sym.market, sym.unified);
+            const { candles } = await fetchYahooData(mapped.yahoo, '1d', '1y');
+            if (candles.length < 30) throw new Error('Data kurang');
+            const closes = candles.map(c => c.close);
+            const ind = { ema50: calculateEMA(closes, 50), ema200: calculateEMA(closes, 200), rsi: calculateRSI(closes, 14), macd: calculateMACD(closes, 12, 26, 9), bb: calculateBB(closes, 20, 2) };
+            const sig = generateSimpleSignal(candles, ind);
+            cp++; document.getElementById('screenerCount').textContent = `(${cp}/${SCREENER_SYMBOLS.length})`;
+            return { unified: sym.unified, name: sym.name, market: sym.market, signal: sig };
+        }));
+        br.forEach(r => { if (r.status === 'fulfilled') results.push(r.value); else { cp++; document.getElementById('screenerCount').textContent = `(${cp}/${SCREENER_SYMBOLS.length})`; } });
+    }
+    
+    renderScreenerTables(results);
+    checkForNewSignals(results);
+    btn.disabled = false;
+    btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Scan`;
+    document.getElementById('screenerCount').textContent = `${results.length} aset`;
+}
+
+function renderScreenerTables(results) {
+    renderColumn('screenerBodyCrypto', results.filter(r => r.market === 'CRYPTO'));
+    renderColumn('screenerBodyUS', results.filter(r => r.market === 'NASDAQ'));
+    renderColumn('screenerBodyIDX', results.filter(r => r.market === 'IDX'));
+}
+
+function renderColumn(elId, results) {
+    const bd = document.getElementById(elId);
+    if (results.length === 0) { bd.innerHTML = `<tr><td colspan="2" class="text-center py-6 text-gray-600">Tidak ada data</td></tr>`; return; }
+    results.sort((a, b) => b.signal.score - a.signal.score);
+    
+    bd.innerHTML = results.map(r => {
+        const s = r.signal;
+        let sB;
+        if (s.score >= 4) sB = '<span class="px-2 py-0.5 rounded bg-green-600 text-white font-bold text-[9px]">BELI</span>';
+        else if (s.score >= 2) sB = '<span class="px-2 py-0.5 rounded bg-green-700/50 text-green-400 font-semibold text-[9px]">TAHAN</span>';
+        else if (s.score > -2) sB = '<span class="px-2 py-0.5 rounded bg-gray-700 text-gray-400 text-[9px]">TUNGGU</span>';
+        else if (s.score > -4) sB = '<span class="px-2 py-0.5 rounded bg-red-700/50 text-red-400 font-semibold text-[9px]">JUAL</span>';
+        else sB = '<span class="px-2 py-0.5 rounded bg-red-600 text-white font-bold text-[9px]">JUAL!</span>';
+        
+        // Ambil alasan utama (2 pertama)
+        const reasonsHtml = s.reasons.slice(0, 2).map(r => `<span class="text-[10px] text-gray-500 block">${r}</span>`).join('');
+        
+        return `<tr class="border-b border-gray-800/30 hover:bg-gray-800/30 cursor-pointer fade-in" onclick="loadSymbolFromScreener('${r.market}', '${r.unified}')">
+            <td class="px-3 py-2">
+                <div class="font-semibold text-gray-200">${r.unified}</div>
+                <div class="text-[10px] text-gray-500 mb-1">${r.name}</div>
+                ${reasonsHtml}
+            </td>
+            <td class="px-3 py-2 text-center align-middle">
+                ${sB}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SIGNAL NOTIF
+// ═══════════════════════════════════════════════════════════
+function checkForNewSignals(results) {
+    const t = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    results.forEach(r => {
+        const mapped = mapSymbol(r.market, r.unified);
+        const k = mapped.yahoo, p = lastSignals[k], c = r.signal.signal;
+        if (!p || p.signal !== c) {
+            if (c.includes('BUY') || c.includes('SELL')) {
+                addSignalLog(r, t, !p ? 'NEW' : 'CHANGED');
+                if (notificationsEnabled && (!p || p.signal !== c)) sendNotification(r, c);
+            }
+        } lastSignals[k] = { signal: c, score: r.signal.score };
+    });
+}
+
+function addSignalLog(r, t, ty) {
+    const lg = document.getElementById('signalLog');
+    if (lg.querySelector('p')) lg.innerHTML = '';
+    const s = r.signal, ib = s.signal.includes('BUY');
+    const bg = ib ? 'bg-green-900/20 border-green-700/30' : 'bg-red-900/20 border-red-700/30';
+    const tc = ib ? 'text-green-400' : 'text-red-400';
+    const e = document.createElement('div');
+    e.className = `${bg} border rounded-lg p-2.5 fade-in`;
+    e.innerHTML = `<div class="flex items-center justify-between mb-1"><div class="flex items-center gap-2"><span class="text-sm">${s.icon}</span><span class="font-semibold text-xs ${tc}">${s.simpleText}</span><span class="text-xs text-gray-400 font-mono">${r.unified}</span>${ty === 'NEW' ? '<span class="text-[9px] px-1 py-0.5 rounded bg-blue-900/50 text-blue-400">NEW</span>' : '<span class="text-[9px] px-1 py-0.5 rounded bg-yellow-900/50 text-yellow-400">CHANGED</span>'}</div><span class="text-[10px] text-gray-500">${t}</span></div><div class="text-[10px] text-gray-500 space-y-0.5"><div>${s.reasons.slice(0, 2).join(' • ')}</div></div>`;
+    lg.prepend(e);
+    while (lg.querySelectorAll('div.border').length > 50) lg.lastChild.remove();
+    playAlertSound(ib);
+}
+
+function sendNotification(r, sig) {
+    if (Notification.permission === 'granted') new Notification('🚨 Lina AI - Sinyal Baru', { body: `${r.name} (${r.unified}) → ${sig}\n${r.signal.reasons.slice(0, 2).join(' • ')}`, tag: r.unified, requireInteraction: true });
+}
+
+function playAlertSound(ib) {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.setValueAtTime(ib ? 523.25 : 392, ctx.currentTime);
+        o.frequency.exponentialRampToValueAtTime(ib ? 783.99 : 261.63, ctx.currentTime + 0.15);
+        g.gain.setValueAtTime(0.2, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        o.start(); o.stop(ctx.currentTime + 0.4);
+    } catch (e) {}
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GLOBAL INTERACTIONS
+// ═══════════════════════════════════════════════════════════
+window.loadSymbolFromScreener = function(market, unifiedSym) {
+    document.getElementById('marketSelect').value = market;
+    document.getElementById('marketSelect').dispatchEvent(new Event('change'));
+    document.getElementById('symbolInput').value = unifiedSym;
+    loadFromInput();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+document.getElementById('marketSelect').addEventListener('change', (e) => {
+    const market = e.target.value;
+    const input = document.getElementById('symbolInput');
+    const intervalSelect = document.getElementById('intervalSelect');
+    if (market === 'NASDAQ') input.placeholder = 'Contoh: AAPL';
+    else if (market === 'IDX') input.placeholder = 'Contoh: BBCA';
+    else if (market === 'CRYPTO') input.placeholder = 'Contoh: BTCUSD';
+    input.value = ''; 
+    input.focus();
+    if (market === 'IDX') {
+        intervalSelect.innerHTML = '<option value="D" selected>1D</option><option value="W">1W</option>';
+    } else {
+        intervalSelect.innerHTML = '<option value="15">15m</option><option value="60" selected>1H</option><option value="240">4H</option><option value="D">1D</option><option value="W">1W</option>';
+    }
+});
+
+document.getElementById('loadChartBtn').addEventListener('click', loadFromInput);
+document.getElementById('symbolInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') loadFromInput(); });
+
+document.getElementById('rangeSelect').addEventListener('change', loadAnalysis);
+document.getElementById('screenerScanBtn').addEventListener('click', runScreener);
+
+document.getElementById('autoScanCheck').addEventListener('change', (e) => {
+    if (e.target.checked) { runScreener(); autoScanInterval = setInterval(runScreener, 300000); } else clearInterval(autoScanInterval);
+});
+
+document.getElementById('clearSignalsBtn').addEventListener('click', () => {
+    document.getElementById('signalLog').innerHTML = '<p class="text-xs text-gray-600 text-center py-4">Belum ada sinyal terdeteksi</p>';
+});
+
+document.getElementById('notifBtn').addEventListener('click', async () => {
+    if (!('Notification' in window)) { alert('Browser tidak mendukung notifikasi'); return; }
+    if (Notification.permission === 'granted') {
+        notificationsEnabled = !notificationsEnabled;
+        document.getElementById('notifBtn').style.background = notificationsEnabled ? '#1e3a5f' : '';
+        alert(notificationsEnabled ? 'Notifikasi diaktifkan' : 'Notifikasi dinonaktifkan');
+    } else {
+        const p = await Notification.requestPermission();
+        if (p === 'granted') {
+            notificationsEnabled = true; document.getElementById('notifBtn').style.background = '#1e3a5f';
+            new Notification('✅ Lina AI', { body: 'Notifikasi diaktifkan. Anda akan menerima sinyal trading.' });
+        }
+    }
+});
+
+// INIT
+window.addEventListener('DOMContentLoaded', () => {
+    initYahooChart();
+    loadFromInput(); 
+    setTimeout(runScreener, 3000);
+});
+</script>
+
+</body>
+</html>
