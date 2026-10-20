@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Version stamp untuk debugging - cek apakah browser pakai versi terbaru -->
-    <meta name="version" content="v5-2026-10-20">
-    <meta name="description" content="Lina AI - Analisis Saham: Teknikal + Fundamental + Berita (v5)">
-    <title>Lina AI v5 - Analisis Saham (Teknikal + Fundamental + Berita)</title>
+    <meta name="version" content="v6-2026-10-20">
+    <meta name="description" content="Lina AI - Analisis Saham: Teknikal + Fundamental + Berita (v6)">
+    <title>Lina AI v6 - Analisis Saham (Teknikal + Fundamental + Berita)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -691,23 +691,31 @@
             </div>
 
             <div>
-                <label class="block text-sm font-semibold text-gray-300 mb-1">Custom CORS Proxy URL (untuk IDX/Crypto)</label>
-                <input type="text" id="customProxyInput" placeholder="Contoh: https://my-worker.username.workers.dev/?url=" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                <label class="block text-sm font-semibold text-gray-300 mb-1">Twelve Data API Key (untuk IDX/Crypto - free 800 req/hari)</label>
+                <input type="text" id="twelveDataApiKeyInput" placeholder="Contoh: abc123def456..." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                 <p class="text-[10px] text-gray-500 mt-1">
-                    Optional. Yahoo Finance (untuk IDX/Crypto) butuh CORS proxy karena CORS policy.
-                    Public proxy gratis (allorigins, codetabs) sering down/rate-limited.
-                    Deploy Cloudflare Worker sendiri - lihat panduan di <a href="https://github.com/ARIKO13/LINA-AI-SAHAM#deploy-cloudflare-worker-untuk-cors-proxy" target="_blank" rel="noopener" class="text-blue-400 hover:underline">README</a>.
-                    Format URL: <code>https://[worker-url]/?url=</code> (akan ditambah URL target setelahnya).
+                    Daftar gratis di <a href="https://twelvedata.com/pricing" target="_blank" rel="noopener" class="text-blue-400 hover:underline">twelvedata.com/pricing</a> (800 request/hari gratis).
+                    Twelve Data CORS-friendly langsung - support saham IDX (BBCA, BBRI, TLKM, dll) dan crypto.
+                    <strong>Tanpa ini, IDX butuh CORS proxy (Yahoo Finance).</strong>
                 </p>
             </div>
 
-            <div class="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3 text-xs text-blue-300">
-                <p class="font-semibold mb-1">💡 Tips Performa:</p>
+            <div>
+                <label class="block text-sm font-semibold text-gray-300 mb-1">Custom CORS Proxy URL (untuk fallback Yahoo Finance)</label>
+                <input type="text" id="customProxyInput" placeholder="Contoh: https://my-worker.username.workers.dev/?url=" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                <p class="text-[10px] text-gray-500 mt-1">
+                    Optional. Hanya dipakai kalau Binance (crypto) / FMP (US) / Twelve Data (IDX) semua gagal.
+                    Deploy Cloudflare Worker - lihat panduan di <a href="https://github.com/ARIKO13/LINA-AI-SAHAM#deploy-cloudflare-worker-untuk-cors-proxy" target="_blank" rel="noopener" class="text-blue-400 hover:underline">README</a>.
+                </p>
+            </div>
+
+            <div class="bg-green-900/20 border border-green-700/30 rounded-lg p-3 text-xs text-green-300">
+                <p class="font-semibold mb-1">🚀 Routing Data (NO Yahoo Finance kalau ada API keys):</p>
                 <ul class="list-disc list-inside space-y-0.5 text-[10px]">
-                    <li>US stocks: Pakai FMP API (langsung, tanpa proxy, super cepat ~500ms)</li>
-                    <li>IDX/Crypto: Butuh CORS proxy untuk Yahoo Finance (FMP tidak support free)</li>
-                    <li>Berita: Yahoo Finance search (perlu CORS proxy untuk IDX/Crypto)</li>
-                    <li>Teknikal: 1 tahun historical data cukup untuk EMA 200, RSI, MACD, BB</li>
+                    <li><strong>Crypto</strong> (BTCUSD, ETHUSD, dll): Binance API - instant, no key, CORS-friendly</li>
+                    <li><strong>US stocks</strong> (AAPL, TSLA, NVDA): FMP API - super cepat, butuh API key</li>
+                    <li><strong>IDX</strong> (BBCA, BBRI, TLKM): Twelve Data - CORS-friendly, butuh API key</li>
+                    <li><strong>Fallback</strong>: Cloudflare Worker → Yahoo Finance (kalau semua di atas gagal)</li>
                 </ul>
             </div>
 
@@ -1023,17 +1031,27 @@ async function fetchWithProxies(url, asJson = true, timeoutMs = 15000, retries =
     throw new Error(`Gagal fetch setelah ${retries + 1}x percobaan: ${msg.substring(0, 80)}`);
 }
 
-// Direct fetch (untuk FMP yang support CORS langsung)
-// Tambah cache-busting (_t timestamp) untuk hindari HTTP cache di browser
+// Direct fetch (untuk FMP/Binance/Twelve Data yang support CORS langsung)
 async function fetchDirect(url, asJson = true, timeoutMs = 10000) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-        // Tambah cache-busting parameter (_t) supaya browser tidak cache response
-        const cacheBust = (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
-        const r = await fetch(url + cacheBust, {
+        // Cache-busting hanya untuk FMP (yang tidak set Cache-Control header)
+        // Binance & Twelve Data: tidak perlu cache-bust (mereka punya cache header sendiri)
+        // Binance terutama: reject unknown params dengan HTTP 400
+        let finalUrl = url;
+        const isBinance = url.includes('binance.com');
+        if (isBinance) {
+            // Binance: skip cache-bust, rely on cache: 'no-store' only
+        } else {
+            // FMP / Twelve Data: add cache-bust
+            const cacheBust = (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+            finalUrl = url + cacheBust;
+        }
+
+        const r = await fetch(finalUrl, {
             signal: ctrl.signal,
-            cache: 'no-store', // penting: bypass HTTP cache
+            cache: 'no-store', // bypass HTTP cache
             headers: { 'Accept': 'application/json' }
         });
         clearTimeout(t);
@@ -1046,7 +1064,32 @@ async function fetchDirect(url, asJson = true, timeoutMs = 10000) {
 }
 
 async function fetchYahooChart(symbol, interval = '1d', range = '1y') {
-    // Untuk US stocks (tanpa .JK atau -USD), coba FMP dulu (super cepat, no proxy)
+    // SMART ROUTING berdasarkan symbol type:
+    // - Crypto (XX-USD): Binance API (CORS-friendly, no proxy, super cepat ~100ms)
+    // - US stocks (tanpa .JK): FMP API (kalau ada API key) atau Yahoo via proxy
+    // - IDX (XX.JK): Twelve Data (kalau ada API key) atau Yahoo via proxy
+
+    // 1. CRYPTO: Binance API (instant, no key needed, CORS-friendly)
+    if (symbol.endsWith('-USD')) {
+        const binanceResult = await fetchBinanceChart(symbol, range);
+        if (binanceResult && binanceResult.candles.length >= 30) {
+            console.log(`✓ Binance untuk ${symbol} (${binanceResult.candles.length} candles)`);
+            return binanceResult;
+        }
+        console.log('Binance failed, fallback to Yahoo proxy...');
+    }
+
+    // 2. IDX: Twelve Data (kalau user punya API key)
+    if (symbol.endsWith('.JK') && window.TWELVE_DATA_API_KEY) {
+        const tdResult = await fetchTwelveDataChart(symbol, range);
+        if (tdResult && tdResult.candles.length >= 30) {
+            console.log(`✓ Twelve Data untuk ${symbol} (${tdResult.candles.length} candles)`);
+            return tdResult;
+        }
+        console.log('Twelve Data failed, fallback to Yahoo proxy...');
+    }
+
+    // 3. US stocks: coba FMP dulu
     const isUS = !symbol.endsWith('.JK') && !symbol.endsWith('-USD') && !symbol.startsWith('^');
     if (isUS && window.FMP_API_KEY && interval === '1d') {
         const fmp = await fetchFMPHistoricalPrice(symbol, range);
@@ -1055,7 +1098,8 @@ async function fetchYahooChart(symbol, interval = '1d', range = '1y') {
             return fmp;
         }
     }
-    // Fallback ke Yahoo via proxy
+
+    // 4. Fallback: Yahoo Finance via CORS proxy
     const url = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
     const j = await fetchWithProxies(url, true);
     if (!j.chart || !j.chart.result || !j.chart.result[0]) throw new Error('Data chart tidak valid');
@@ -1069,7 +1113,25 @@ async function fetchYahooChart(symbol, interval = '1d', range = '1y') {
 
 // Versi dengan retry lebih banyak + timeout lebih lama (untuk main analysis)
 async function fetchYahooChartLong(symbol, interval = '1d', range = '1y') {
-    // Untuk US stocks, coba FMP dulu
+    // SMART ROUTING sama dengan fetchYahooChart
+    if (symbol.endsWith('-USD')) {
+        const binanceResult = await fetchBinanceChart(symbol, range);
+        if (binanceResult && binanceResult.candles.length >= 30) {
+            console.log(`✓ Binance untuk ${symbol} (${binanceResult.candles.length} candles)`);
+            return binanceResult;
+        }
+        console.log('Binance failed, fallback to Yahoo proxy...');
+    }
+
+    if (symbol.endsWith('.JK') && window.TWELVE_DATA_API_KEY) {
+        const tdResult = await fetchTwelveDataChart(symbol, range);
+        if (tdResult && tdResult.candles.length >= 30) {
+            console.log(`✓ Twelve Data untuk ${symbol} (${tdResult.candles.length} candles)`);
+            return tdResult;
+        }
+        console.log('Twelve Data failed, fallback to Yahoo proxy...');
+    }
+
     const isUS = !symbol.endsWith('.JK') && !symbol.endsWith('-USD') && !symbol.startsWith('^');
     if (isUS && window.FMP_API_KEY && interval === '1d') {
         const fmp = await fetchFMPHistoricalPrice(symbol, range);
@@ -1089,6 +1151,93 @@ async function fetchYahooChartLong(symbol, interval = '1d', range = '1y') {
         c.push({ time: t[i], open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i], volume: q.volume[i] || 0 });
     }
     return { candles: c, meta: res.meta || {} };
+}
+
+// === BINANCE API untuk CRYPTO ===
+// CORS-friendly, no API key needed, super cepat (~100ms)
+// Docs: https://binance-docs.github.io/apidocs/spot/en/
+async function fetchBinanceChart(symbol, range = '1y') {
+    // Convert symbol: BTC-USD → BTCUSDT
+    const coin = symbol.replace('-USD', '').toUpperCase();
+    const binanceSymbol = coin + 'USDT';
+
+    // Binance max 1000 candles per request
+    // interval: 1d, range: 3mo/6mo/1y/2y → candle count
+    const rangeMap = { '3mo': 90, '6mo': 180, '1y': 365, '2y': 730 };
+    const limit = Math.min(rangeMap[range] || 365, 1000);
+
+    const url = `https://api.binance.com/api/v3/klines?symbol=${binanceSymbol}&interval=1d&limit=${limit}`;
+    try {
+        const data = await fetchDirect(url, true, 8000);
+        if (!Array.isArray(data)) return null;
+
+        // Binance response format: [openTime, open, high, low, close, volume, closeTime, ...]
+        const candles = data.map(k => ({
+            time: Math.floor(k[0] / 1000), // openTime (ms → s)
+            open: parseFloat(k[1]),
+            high: parseFloat(k[2]),
+            low: parseFloat(k[3]),
+            close: parseFloat(k[4]),
+            volume: parseFloat(k[5]),
+        }));
+
+        const meta = {
+            symbol: binanceSymbol,
+            currency: 'USDT',
+            longName: coin + ' / Tether USDT',
+            regularMarketPrice: candles.length > 0 ? candles[candles.length - 1].close : null,
+            fiftyTwoWeekHigh: Math.max(...candles.map(c => c.high)),
+            fiftyTwoWeekLow: Math.min(...candles.map(c => c.low)),
+        };
+        return { candles, meta };
+    } catch (e) {
+        console.log('Binance fetch failed:', e.message);
+        return null;
+    }
+}
+
+// === TWELVE DATA API untuk IDX (saham Indonesia) ===
+// CORS-friendly, butuh API key (free 800 req/day)
+// Register: https://twelvedata.com/pricing
+// Docs: https://twelvedata.com/docs#time-series
+async function fetchTwelveDataChart(symbol, range = '1y') {
+    if (!window.TWELVE_DATA_API_KEY) return null;
+    // Twelve Data pakai symbol tanpa .JK untuk IDX
+    const tdSymbol = symbol.replace('.JK', '');
+    const rangeMap = { '3mo': 90, '6mo': 180, '1y': 365, '2y': 730 };
+    const outputsize = Math.min(rangeMap[range] || 365, 5000);
+
+    const url = `https://api.twelvedata.com/time_series?symbol=${tdSymbol}&exchange=IDX&interval=1day&outputsize=${outputsize}&apikey=${window.TWELVE_DATA_API_KEY}`;
+    try {
+        const data = await fetchDirect(url, true, 12000);
+        if (!data || data.status === 'error' || !data.values) {
+            console.log('Twelve Data error:', data?.message || 'no values');
+            return null;
+        }
+
+        // Twelve Data returns values sorted DESC (newest first)
+        const candles = data.values.reverse().map(v => ({
+            time: Math.floor(new Date(v.datetime).getTime() / 1000),
+            open: parseFloat(v.open),
+            high: parseFloat(v.high),
+            low: parseFloat(v.low),
+            close: parseFloat(v.close),
+            volume: parseFloat(v.volume || 0),
+        }));
+
+        const meta = {
+            symbol: tdSymbol,
+            currency: 'IDR',
+            longName: data.meta?.symbol || tdSymbol,
+            regularMarketPrice: candles.length > 0 ? candles[candles.length - 1].close : null,
+            fiftyTwoWeekHigh: Math.max(...candles.map(c => c.high)),
+            fiftyTwoWeekLow: Math.min(...candles.map(c => c.low)),
+        };
+        return { candles, meta };
+    } catch (e) {
+        console.log('Twelve Data fetch failed:', e.message);
+        return null;
+    }
 }
 
 async function fetchYahooQuoteSummary(symbol) {
@@ -2882,6 +3031,7 @@ document.getElementById('settingsBtn').addEventListener('click', () => {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.getElementById('fmpApiKeyInput').value = window.FMP_API_KEY || '';
+    document.getElementById('twelveDataApiKeyInput').value = window.TWELVE_DATA_API_KEY || '';
     document.getElementById('customProxyInput').value = window.CUSTOM_PROXY_URL || '';
 });
 
@@ -2896,17 +3046,21 @@ function closeSettingsModal() {
 
 document.getElementById('saveSettingsBtn').addEventListener('click', () => {
     const key = document.getElementById('fmpApiKeyInput').value.trim();
+    const tdKey = document.getElementById('twelveDataApiKeyInput').value.trim();
     const proxyUrl = document.getElementById('customProxyInput').value.trim();
     window.FMP_API_KEY = key;
+    window.TWELVE_DATA_API_KEY = tdKey;
     window.CUSTOM_PROXY_URL = proxyUrl;
     try {
         localStorage.setItem('fmp_api_key', key);
+        localStorage.setItem('twelve_data_api_key', tdKey);
         localStorage.setItem('custom_proxy_url', proxyUrl);
     } catch (e) {}
-    document.getElementById('settingsBtn').style.background = (key || proxyUrl) ? '#1e3a5f' : '';
+    document.getElementById('settingsBtn').style.background = (key || proxyUrl || tdKey) ? '#1e3a5f' : '';
     closeSettingsModal();
     const msgs = [];
     if (key) msgs.push('FMP API key disimpan');
+    if (tdKey) msgs.push('Twelve Data API key disimpan');
     if (proxyUrl) msgs.push('Custom proxy disimpan');
     if (msgs.length > 0) {
         alert(msgs.join(', ') + '. Klik "Analisis" lagi untuk memuat data lengkap.');
@@ -2922,17 +3076,19 @@ document.getElementById('settingsModal').addEventListener('click', (e) => {
 
 // INIT
 window.addEventListener('DOMContentLoaded', () => {
-    // Load FMP API key + custom proxy dari localStorage
+    // Load semua API keys + custom proxy dari localStorage
     try {
         window.FMP_API_KEY = localStorage.getItem('fmp_api_key') || '';
+        window.TWELVE_DATA_API_KEY = localStorage.getItem('twelve_data_api_key') || '';
         window.CUSTOM_PROXY_URL = localStorage.getItem('custom_proxy_url') || '';
     } catch (e) {
         window.FMP_API_KEY = '';
+        window.TWELVE_DATA_API_KEY = '';
         window.CUSTOM_PROXY_URL = '';
     }
 
     // Update settings icon color if API key or proxy is set
-    if (window.FMP_API_KEY || window.CUSTOM_PROXY_URL) {
+    if (window.FMP_API_KEY || window.TWELVE_DATA_API_KEY || window.CUSTOM_PROXY_URL) {
         document.getElementById('settingsBtn').style.background = '#1e3a5f';
     }
 
