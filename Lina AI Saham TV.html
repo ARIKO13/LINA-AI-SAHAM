@@ -2026,6 +2026,16 @@ function initYahooChart() {
 
 function updateYahooChart(candles, ind) {
     if (!candleSeries) return;
+    // Clear existing data first (untuk hindari stale data dari symbol sebelumnya)
+    candleSeries.setData([]);
+    volumeSeries.setData([]);
+    ema50Series.setData([]);
+    ema200Series.setData([]);
+    bbUpperSeries.setData([]);
+    bbLowerSeries.setData([]);
+
+    if (!candles || candles.length === 0) return;
+
     candleSeries.setData(candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })));
     volumeSeries.setData(candles.map(c => ({ time: c.time, value: c.volume, color: c.close >= c.open ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)' })));
     const mapD = (arr) => candles.map((c, i) => arr[i] !== null ? { time: c.time, value: arr[i] } : null).filter(v => v !== null);
@@ -2045,6 +2055,69 @@ function badgeClass(signal) {
     if (signal.includes('STRONG SELL')) return 'badge-neg';
     if (signal.includes('SELL')) return 'badge-neg';
     return 'badge-neu';
+}
+
+// ===== RESET UI FUNCTIONS (untuk clear panel saat ganti symbol) =====
+function resetTechnicalPanelUI() {
+    ['trendSimple', 'rsiSimple', 'macdSimple', 'bbSimple', 'stochSimple', 'atrSimple',
+     'trendDetail', 'rsiDetail', 'macdDetail', 'bbDetail', 'stochDetail', 'atrDetail']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.textContent = 'Menunggu data...'; });
+    const fullScore = document.getElementById('techFullScore');
+    if (fullScore) fullScore.textContent = '— / 10';
+    const badge = document.getElementById('techSignalBadge');
+    if (badge) { badge.textContent = 'N/A'; badge.className = 'text-[9px] mt-0.5 badge-neu inline-block px-1.5 py-0.5 rounded'; }
+}
+
+function resetFundamentalPanelUI() {
+    // Reset semua ratio ke "—"
+    ['fundCompanyName', 'fundPE', 'fundPB', 'fundEVEBITDA', 'fundDivYield',
+     'fundROE', 'fundROA', 'fundNPM', 'fundOPM',
+     'fundRevGrowth', 'fundEarnGrowth', 'fundEPS', 'fundFCF',
+     'fundDER', 'fundCR', 'fundQR', 'fundBeta',
+     'fundPEG', 'fundGraham', 'fundEVSales', 'fundEVFCF', 'fundPS', 'fundPayout', 'fundGPM', 'fundEBITDAM']
+        .forEach(id => { const el = document.getElementById(id); if (el) { el.textContent = '—'; el.className = 'text-sm font-bold ratio-na'; } });
+    ['fundCompanyMeta', 'fundCompanySector'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+    const sb = document.getElementById('fundSignalBadge');
+    if (sb) { sb.textContent = 'N/A'; sb.className = 'badge-neu px-3 py-1.5 rounded text-sm font-semibold'; }
+    const reasons = document.getElementById('fundReasons');
+    if (reasons) reasons.innerHTML = '<p>Menunggu data...</p>';
+    // Hide sub-sections
+    ['forecastSection', 'priceTargetSection', 'dividendSection', 'peersSection', 'incomeSection']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+}
+
+function resetNewsPanelUI() {
+    ['newsSentimentText', 'newsSentimentDetail', 'newsImpactText'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = '—';
+    });
+    ['newsPosCount', 'newsNeuCount', 'newsNegCount'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = '0';
+    });
+    const sb = document.getElementById('newsSignalBadge');
+    if (sb) { sb.textContent = 'N/A'; sb.className = 'badge-neu px-3 py-1.5 rounded text-sm font-semibold'; }
+    ['stockNewsList', 'macroNewsList'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.innerHTML = '';
+    });
+}
+
+function resetFinalPanelUI() {
+    const card = document.getElementById('finalSignalCard');
+    if (card) card.className = 'signal-hold rounded-xl p-4 text-center transition-all duration-300';
+    ['finalSignalIcon', 'finalSignalText', 'finalSignalScore', 'finalSignalConfidence']
+        .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = id === 'finalSignalIcon' ? '⚪' : (id === 'finalSignalText' ? 'TUNGGU DULU' : (id === 'finalSignalScore' ? 'Skor: 0/100' : 'Konfidens: —'));
+        });
+    ['techScore', 'fundScore', 'newsScore'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = '—';
+    });
+    ['techBadge', 'fundBadge', 'newsBadge'].forEach(id => {
+        const el = document.getElementById(id); if (el) { el.textContent = 'N/A'; el.className = 'text-[9px] mt-0.5 badge-neu inline-block px-1.5 py-0.5 rounded'; }
+    });
+    const reasons = document.getElementById('finalReasonsText');
+    if (reasons) reasons.innerHTML = '<p>Menunggu analisis...</p>';
+    const time = document.getElementById('signalTime');
+    if (time) time.textContent = '—';
 }
 
 function updateTechnicalPanel(tech) {
@@ -2346,18 +2419,34 @@ async function runFullAnalysis() {
     }
     mainAnalysisInProgress = true;
     const l = document.getElementById('chartLoading');
-    l.style.display = 'flex';
-    l.innerHTML = `<div class="text-center"><div class="inline-block w-8 h-8 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mb-2"></div><p class="text-xs text-gray-500">Memuat data teknikal...</p></div>`;
 
-    // Reset panels
+    // ===== RESET SEMUA STATE GLOBAL supaya tidak ada stale data dari analisis sebelumnya =====
+    lastTechAnalysis = null; lastFundAnalysis = null; lastNewsAnalysis = null;
+    window._lastFMPProfile = null;
+    window._lastForecast = null;
+    window._lastPriceTarget = null;
+    window._lastDividends = null;
+    window._lastPeers = null;
+    window._lastIncome = null;
+
+    // Clear cache (TTL 60s, tapi clear saat ganti symbol untuk fresh data)
+    _cache.clear();
+
+    // Reset UI panels ke state "loading/empty"
+    resetFundamentalPanelUI();
+    resetNewsPanelUI();
+    resetFinalPanelUI();
+    resetTechnicalPanelUI();
+
+    l.style.display = 'flex';
+    l.innerHTML = `<div class="text-center"><div class="inline-block w-8 h-8 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mb-2"></div><p class="text-xs text-gray-500">Memuat data ${currentYahooSymbol}...</p></div>`;
+
     document.getElementById('fundLoading').classList.remove('hidden');
-    document.getElementById('fundLoading').textContent = 'Memuat data fundamental...';
+    document.getElementById('fundLoading').textContent = `Memuat data fundamental ${currentYahooSymbol}...`;
     document.getElementById('fundContent').classList.add('hidden');
     document.getElementById('newsLoading').classList.remove('hidden');
-    document.getElementById('newsLoading').textContent = 'Memuat berita...';
+    document.getElementById('newsLoading').textContent = `Memuat berita ${currentYahooSymbol}...`;
     document.getElementById('newsContent').classList.add('hidden');
-
-    lastTechAnalysis = null; lastFundAnalysis = null; lastNewsAnalysis = null;
 
     const range = document.getElementById('rangeSelect').value;
 
@@ -2388,11 +2477,7 @@ async function runFullAnalysis() {
     }
 
     // === 2. FUNDAMENTAL (parallel with news + analyst estimates + dividends + price target + peers + income) ===
-    window._lastForecast = null;
-    window._lastPriceTarget = null;
-    window._lastDividends = null;
-    window._lastPeers = null;
-    window._lastIncome = null;
+    // Globals sudah di-reset di awal runFullAnalysis
     const fundPromise = (async () => {
         try {
             if (currentMarket === 'CRYPTO') {
