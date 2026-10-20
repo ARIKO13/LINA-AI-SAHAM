@@ -751,6 +751,7 @@ let yahooChart = null, candleSeries = null, ema50Series = null, ema200Series = n
 let lastSignals = {}, autoScanInterval = null, notificationsEnabled = false;
 let lastTechAnalysis = null, lastFundAnalysis = null, lastNewsAnalysis = null;
 let mainAnalysisInProgress = false; // flag untuk pause screener saat main analysis jalan
+let currentAnalysisId = 0; // counter untuk deteksi analisis mana yang paling baru (race condition fix)
 
 // ═══════════════════════════════════════════════════════════
 //  FUNGSI MAPPING & PENCARIAN
@@ -2429,17 +2430,23 @@ function updateFinalPanel(final) {
 //  RUN FULL ANALYSIS (Teknikal + Fundamental + Berita)
 // ═══════════════════════════════════════════════════════════
 async function runFullAnalysis() {
-    if (mainAnalysisInProgress) {
-        console.log('Main analysis already in progress, skipping...');
-        return;
-    }
+    // ===== RACE CONDITION FIX (CRITICAL) =====
+    // Sebelumnya: mainAnalysisInProgress guard bikin analisis baru di-skip
+    //   → analisis lama (AAPL) tetap jalan, selesai, update UI dengan data AAPL
+    //   → UI tampil AAPL padahal user sudah switch ke BUMI
+    // Sekarang: pakai analysisId counter. Analisis lama akan cek ID-nya, kalau beda
+    //   dengan currentAnalysisId, dia skip update UI (analisis sudah obsolete).
+    currentAnalysisId++;
+    const myAnalysisId = currentAnalysisId;
+    const isActive = () => myAnalysisId === currentAnalysisId;
+
     mainAnalysisInProgress = true;
     // Simpan symbol yang sedang dianalisis untuk deteksi race condition
     const analysisSymbol = currentYahooSymbol;
     const analysisMarket = currentMarket;
     const l = document.getElementById('chartLoading');
 
-    console.log(`🔍 runFullAnalysis START for symbol=${analysisSymbol} market=${analysisMarket}`);
+    console.log(`🔍 runFullAnalysis START id=${myAnalysisId} symbol=${analysisSymbol} market=${analysisMarket}`);
 
     // ===== RESET SEMUA STATE GLOBAL supaya tidak ada stale data dari analisis sebelumnya =====
     lastTechAnalysis = null; lastFundAnalysis = null; lastNewsAnalysis = null;
@@ -2471,10 +2478,15 @@ async function runFullAnalysis() {
 
     const range = document.getElementById('rangeSelect').value;
 
-    // Helper: cek apakah symbol masih sama (race condition guard)
+    // Helper: cek apakah analisis ini masih yang paling baru (race condition guard)
+    // Kombinasi analysisId match + symbol masih sama
     const isStillActive = () => {
+        if (!isActive()) {
+            console.warn(`⚠️ Analysis id=${myAnalysisId} obsolete (current=${currentAnalysisId}). Skip update UI for ${analysisSymbol}.`);
+            return false;
+        }
         if (currentYahooSymbol !== analysisSymbol) {
-            console.warn(`⚠️ Symbol berubah selama analisis! Analysis=${analysisSymbol}, Current=${currentYahooSymbol}. Skip update UI.`);
+            console.warn(`⚠️ Symbol berubah! Analysis=${analysisSymbol}, Current=${currentYahooSymbol}. Skip update UI.`);
             return false;
         }
         return true;
@@ -2494,7 +2506,7 @@ async function runFullAnalysis() {
                 console.log(`Range ${r} gagal: ${e.message.substring(0, 50)}`);
             }
         }
-        if (!isStillActive()) { mainAnalysisInProgress = false; return; }
+        if (!isStillActive()) return;
         if (!chartData || chartData.candles.length < 30) throw new Error('Data chart tidak cukup setelah semua fallback range');
         const { candles, meta } = chartData;
         lastTechAnalysis = analyzeTechnical(candles);
