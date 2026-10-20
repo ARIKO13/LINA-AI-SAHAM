@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lina AI - Analisis Saham Buat Pemula</title>
+    <title>Lina AI - Analisis Saham (Teknikal + Fundamental + Berita)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -29,6 +29,18 @@
         .fade-in { animation: fadeIn 0.4s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .signal-card { transition: all 0.3s ease; }
+        .tab-btn { transition: all 0.2s ease; }
+        .tab-btn.active { background: #1e40af; color: #fff; }
+        .tab-btn:not(.active):hover { background: #1f2937; }
+        .news-card { transition: all 0.2s ease; }
+        .news-card:hover { transform: translateY(-2px); border-color: rgba(59,130,246,0.4); }
+        .badge-pos { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+        .badge-neg { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-neu { background: rgba(156,163,175,0.15); color: #d1d5db; border: 1px solid rgba(156,163,175,0.3); }
+        .ratio-good { color: #4ade80; }
+        .ratio-bad { color: #f87171; }
+        .ratio-neutral { color: #facc15; }
+        .ratio-na { color: #6b7280; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -40,7 +52,7 @@
             <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center font-bold text-lg text-white">L</div>
             <div>
                 <h1 class="text-lg font-bold text-white leading-tight">Lina AI</h1>
-                <p class="text-xs text-gray-500">Analisis Saham Buat Pemula</p>
+                <p class="text-xs text-gray-500">Analisis Saham: Teknikal + Fundamental + Berita</p>
             </div>
         </div>
 
@@ -50,14 +62,14 @@
                 <option value="IDX">IHSG (IDX)</option>
                 <option value="CRYPTO">CRYPTO</option>
             </select>
-            
+
             <div class="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus-within:border-blue-500 transition">
                 <span class="text-xs text-gray-500">Kode:</span>
                 <input type="text" id="symbolInput" value="AAPL" class="bg-transparent text-sm focus:outline-none w-28 font-mono uppercase" placeholder="Ketik kode...">
             </div>
-            
+
             <button id="loadChartBtn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition">
-                Cari
+                Analisis
             </button>
         </div>
 
@@ -72,6 +84,9 @@
         </div>
 
         <div class="flex items-center gap-2 ml-auto">
+            <button id="settingsBtn" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-2 rounded-lg text-sm transition" title="Pengaturan API Key">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </button>
             <button id="screenerScanBtn" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Scan
@@ -87,7 +102,7 @@
 <!-- ============ MAIN ============ -->
 <main class="max-w-[1800px] mx-auto p-4 space-y-4">
 
-    <!-- ===== ROW 1: TradingView + Kesimpulan Awam ===== -->
+    <!-- ===== ROW 1: TradingView + Rekomendasi Akhir ===== -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- TradingView -->
         <div class="lg:col-span-2 bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden flex flex-col" style="height: 650px;">
@@ -101,12 +116,12 @@
             <div id="tradingview-chart" class="flex-1 relative"></div>
         </div>
 
-        <!-- Kesimpulan Analisis Buat Pemula -->
+        <!-- REKOMENDASI AKHIR (GABUNGAN) -->
         <div class="lg:col-span-1 bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden flex flex-col" style="height: 650px;">
             <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-800">
                 <div class="flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-                    <h2 class="text-sm font-semibold text-gray-300">Kesimpulan Analisis</h2>
+                    <h2 class="text-sm font-semibold text-gray-300">Rekomendasi Akhir (Gabungan)</h2>
                 </div>
                 <select id="rangeSelect" class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs focus:outline-none">
                     <option value="3mo">3 Bln</option>
@@ -116,7 +131,7 @@
                 </select>
             </div>
 
-            <div id="yahooChartContainer" class="relative" style="height: 220px;">
+            <div id="yahooChartContainer" class="relative" style="height: 180px;">
                 <div id="yahooChart" class="w-full h-full"></div>
                 <div id="chartLoading" class="absolute inset-0 flex items-center justify-center bg-[#0d1320] z-10">
                     <div class="text-center">
@@ -126,46 +141,40 @@
                 </div>
             </div>
 
-            <!-- KESIMPULAN BAHASA AWAM -->
+            <!-- FINAL RECOMMENDATION CARD -->
             <div class="flex-1 overflow-y-auto scroll-thin p-4 space-y-3">
-                <div id="simpleSignalCard" class="signal-hold rounded-xl p-4 text-center transition-all duration-300">
-                    <div class="text-xs text-gray-500 uppercase tracking-wider mb-1">Saran Tindakan</div>
-                    <div id="simpleSignalIcon" class="text-3xl mb-1">⚪</div>
-                    <div id="simpleSignalText" class="text-xl font-bold mb-1">TUNGGU DULU</div>
-                    <div id="simpleSignalScore" class="text-[10px] text-gray-500">Skor: 0/10</div>
+                <div id="finalSignalCard" class="signal-hold rounded-xl p-4 text-center transition-all duration-300">
+                    <div class="text-xs text-gray-500 uppercase tracking-wider mb-1">Saran Tindakan Final</div>
+                    <div id="finalSignalIcon" class="text-3xl mb-1">⚪</div>
+                    <div id="finalSignalText" class="text-xl font-bold mb-1">TUNGGU DULU</div>
+                    <div id="finalSignalScore" class="text-[10px] text-gray-500">Skor: 0/100</div>
+                    <div id="finalSignalConfidence" class="text-[10px] text-gray-400 mt-1">Konfidens: —</div>
                 </div>
 
-                <div class="space-y-2 text-sm">
-                    <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="text-blue-400">📈</span>
-                            <span class="text-xs font-semibold text-gray-400 uppercase">Tren Harga (EMA)</span>
-                        </div>
-                        <p id="trendSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                <!-- SUB-SCORES -->
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-gray-800/40 rounded-lg p-2 border border-gray-700/50 text-center">
+                        <div class="text-[9px] text-gray-500 uppercase">Teknikal</div>
+                        <div id="techScore" class="text-sm font-bold text-gray-300">—</div>
+                        <div id="techBadge" class="text-[9px] mt-0.5 badge-neu inline-block px-1.5 py-0.5 rounded">N/A</div>
                     </div>
-
-                    <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="text-yellow-400">⚖️</span>
-                            <span class="text-xs font-semibold text-gray-400 uppercase">Antrian Beli/Jual (RSI)</span>
-                        </div>
-                        <p id="rsiSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                    <div class="bg-gray-800/40 rounded-lg p-2 border border-gray-700/50 text-center">
+                        <div class="text-[9px] text-gray-500 uppercase">Fundamental</div>
+                        <div id="fundScore" class="text-sm font-bold text-gray-300">—</div>
+                        <div id="fundBadge" class="text-[9px] mt-0.5 badge-neu inline-block px-1.5 py-0.5 rounded">N/A</div>
                     </div>
-
-                    <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="text-purple-400">⚡</span>
-                            <span class="text-xs font-semibold text-gray-400 uppercase">Tenaga Market (MACD)</span>
-                        </div>
-                        <p id="macdSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                    <div class="bg-gray-800/40 rounded-lg p-2 border border-gray-700/50 text-center">
+                        <div class="text-[9px] text-gray-500 uppercase">Berita</div>
+                        <div id="newsScore" class="text-sm font-bold text-gray-300">—</div>
+                        <div id="newsBadge" class="text-[9px] mt-0.5 badge-neu inline-block px-1.5 py-0.5 rounded">N/A</div>
                     </div>
+                </div>
 
-                    <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="text-green-400">🎯</span>
-                            <span class="text-xs font-semibold text-gray-400 uppercase">Posisi Harga (Bollinger)</span>
-                        </div>
-                        <p id="bbSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                <!-- RINGKASAN ALASAN -->
+                <div id="finalReasons" class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 uppercase mb-1">Ringkasan</div>
+                    <div id="finalReasonsText" class="text-xs text-gray-300 space-y-1">
+                        <p>Menunggu analisis...</p>
                     </div>
                 </div>
 
@@ -177,7 +186,274 @@
         </div>
     </section>
 
-    <!-- ===== ROW 2: Screener Simplified ===== -->
+    <!-- ===== ROW 2: ANALYSIS TABS (Teknikal / Fundamental / Berita) ===== -->
+    <section class="bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden">
+        <div class="flex items-center border-b border-gray-800">
+            <button data-tab="teknikal" class="tab-btn active px-5 py-3 text-sm font-semibold border-r border-gray-800">
+                📈 Teknikal
+            </button>
+            <button data-tab="fundamental" class="tab-btn px-5 py-3 text-sm font-semibold border-r border-gray-800">
+                📊 Fundamental
+            </button>
+            <button data-tab="berita" class="tab-btn px-5 py-3 text-sm font-semibold">
+                📰 Berita & Sentimen
+            </button>
+        </div>
+
+        <!-- TAB: TEKNIKAL -->
+        <div id="tab-teknikal" class="tab-content p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-blue-400">📈</span>
+                        <span class="text-xs font-semibold text-gray-400 uppercase">Tren Harga (EMA 50/200)</span>
+                    </div>
+                    <p id="trendSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                    <p id="trendDetail" class="text-[10px] text-gray-500 mt-1"></p>
+                </div>
+
+                <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-yellow-400">⚖️</span>
+                        <span class="text-xs font-semibold text-gray-400 uppercase">Kejenuhan (RSI 14)</span>
+                    </div>
+                    <p id="rsiSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                    <p id="rsiDetail" class="text-[10px] text-gray-500 mt-1"></p>
+                </div>
+
+                <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-purple-400">⚡</span>
+                        <span class="text-xs font-semibold text-gray-400 uppercase">Momentum (MACD)</span>
+                    </div>
+                    <p id="macdSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                    <p id="macdDetail" class="text-[10px] text-gray-500 mt-1"></p>
+                </div>
+
+                <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-green-400">🎯</span>
+                        <span class="text-xs font-semibold text-gray-400 uppercase">Posisi (Bollinger)</span>
+                    </div>
+                    <p id="bbSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                    <p id="bbDetail" class="text-[10px] text-gray-500 mt-1"></p>
+                </div>
+
+                <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-orange-400">_Osc</span>
+                        <span class="text-xs font-semibold text-gray-400 uppercase">Stochastic (14,3)</span>
+                    </div>
+                    <p id="stochSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                    <p id="stochDetail" class="text-[10px] text-gray-500 mt-1"></p>
+                </div>
+
+                <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-red-400">⚡</span>
+                        <span class="text-xs font-semibold text-gray-400 uppercase">Volatilitas (ATR)</span>
+                    </div>
+                    <p id="atrSimple" class="text-gray-300 text-sm">Menunggu data...</p>
+                    <p id="atrDetail" class="text-[10px] text-gray-500 mt-1"></p>
+                </div>
+            </div>
+
+            <!-- Skor Teknikal -->
+            <div class="mt-3 bg-gray-800/40 rounded-lg p-3 border border-gray-700/50 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] text-gray-500 uppercase">Skor Teknikal Gabungan</div>
+                    <div id="techFullScore" class="text-lg font-bold text-gray-300">— / 10</div>
+                </div>
+                <div id="techSignalBadge" class="badge-neu px-3 py-1 rounded text-xs font-semibold">N/A</div>
+            </div>
+        </div>
+
+        <!-- TAB: FUNDAMENTAL -->
+        <div id="tab-fundamental" class="tab-content p-4 hidden">
+            <div id="fundLoading" class="text-center py-8 text-gray-500 text-sm">Klik "Analisis" untuk memuat data fundamental.</div>
+            <div id="fundContent" class="hidden space-y-4">
+                <!-- Header: Nama Perusahaan + Ringkasan -->
+                <div class="bg-gray-800/40 rounded-lg p-4 border border-gray-700/50">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <div>
+                            <div id="fundCompanyName" class="text-lg font-bold text-white">—</div>
+                            <div id="fundCompanyMeta" class="text-xs text-gray-500">—</div>
+                            <div id="fundCompanySector" class="text-xs text-blue-400 mt-1">—</div>
+                        </div>
+                        <div id="fundSignalBadge" class="badge-neu px-3 py-1.5 rounded text-sm font-semibold">N/A</div>
+                    </div>
+                </div>
+
+                <!-- Valuasi -->
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">Valuasi</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">P/E Ratio</div>
+                            <div id="fundPE" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Harga / EPS</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">P/B Ratio</div>
+                            <div id="fundPB" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Harga / Book Value</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">EV/EBITDA</div>
+                            <div id="fundEVEBITDA" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Enterprise Value</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">Dividend Yield</div>
+                            <div id="fundDivYield" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Dividen / Harga</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profitabilitas -->
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">Profitabilitas</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">ROE</div>
+                            <div id="fundROE" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Return on Equity</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">ROA</div>
+                            <div id="fundROA" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Return on Assets</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">Net Margin</div>
+                            <div id="fundNPM" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Laba Bersih / Pendapatan</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">Operating Margin</div>
+                            <div id="fundOPM" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Laba Operasional</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pertumbuhan -->
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">Pertumbuhan (YoY)</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">Revenue Growth</div>
+                            <div id="fundRevGrowth" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Pertumbuhan Pendapatan</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">Earnings Growth</div>
+                            <div id="fundEarnGrowth" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Pertumbuhan Laba</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">EPS (TTM)</div>
+                            <div id="fundEPS" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Laba per Saham</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">Free Cash Flow</div>
+                            <div id="fundFCF" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Arus Kas Bebas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kesehatan Finansial -->
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">Kesehatan Finansial</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">Debt/Equity</div>
+                            <div id="fundDER" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Total Utang / Ekuitas</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">Current Ratio</div>
+                            <div id="fundCR" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Aset Lancar / Utang Lancar</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">Quick Ratio</div>
+                            <div id="fundQR" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Likuiditas Cepat</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">Beta</div>
+                            <div id="fundBeta" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Volatilitas vs Market</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ringkasan Analisis Fundamental -->
+                <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 uppercase mb-2">Analisis & Alasan</div>
+                    <div id="fundReasons" class="text-xs text-gray-300 space-y-1">
+                        <p>Menunggu data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: BERITA -->
+        <div id="tab-berita" class="tab-content p-4 hidden">
+            <div id="newsLoading" class="text-center py-8 text-gray-500 text-sm">Klik "Analisis" untuk memuat berita terkait.</div>
+            <div id="newsContent" class="hidden space-y-4">
+                <!-- Sentimen Ringkas -->
+                <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <div>
+                            <div class="text-[10px] text-gray-500 uppercase">Sentimen Berita Keseluruhan</div>
+                            <div id="newsSentimentText" class="text-lg font-bold text-gray-300">—</div>
+                            <div id="newsSentimentDetail" class="text-[10px] text-gray-500 mt-1">—</div>
+                        </div>
+                        <div id="newsSignalBadge" class="badge-neu px-3 py-1.5 rounded text-sm font-semibold">N/A</div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mt-3">
+                        <div class="text-center">
+                            <div class="text-[10px] text-gray-500">Positif</div>
+                            <div id="newsPosCount" class="text-sm font-bold text-green-400">0</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-[10px] text-gray-500">Netral</div>
+                            <div id="newsNeuCount" class="text-sm font-bold text-gray-300">0</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-[10px] text-gray-500">Negatif</div>
+                            <div id="newsNegCount" class="text-sm font-bold text-red-400">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Berita Saham Terkait -->
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">📰 Berita Saham Terkait</h3>
+                    <div id="stockNewsList" class="space-y-2"></div>
+                </div>
+
+                <!-- Berita Ekonomi & Politik -->
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">🌍 Berita Ekonomi & Politik (Makro)</h3>
+                    <div id="macroNewsList" class="space-y-2"></div>
+                </div>
+
+                <!-- Ringkasan Pengaruh -->
+                <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 uppercase mb-1">Pengaruh Berita terhadap Harga</div>
+                    <div id="newsImpactText" class="text-xs text-gray-300">—</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== ROW 3: Screener Simplified ===== -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         <!-- Crypto Screener -->
@@ -244,7 +520,7 @@
         </div>
     </section>
 
-    <!-- ===== ROW 3: Signal Log + Auto Scan ===== -->
+    <!-- ===== ROW 4: Signal Log + Auto Scan ===== -->
     <section class="grid grid-cols-1 gap-4">
         <div class="bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden flex flex-col" style="max-height: 300px;">
             <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-800">
@@ -268,9 +544,44 @@
 </main>
 
 <footer class="text-center py-4 text-xs text-gray-600">
-    <p>Lina AI — Analisis Lindung Nilai | Pemula Friendly</p>
+    <p>Lina AI — Analisis Teknikal + Fundamental + Berita | Pemula Friendly</p>
     <p class="mt-1">Data: Yahoo Finance API | Chart: TradingView Widget | Bukan saran investasi</p>
 </footer>
+
+<!-- ===== SETTINGS MODAL ===== -->
+<div id="settingsModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 p-4">
+    <div class="bg-[#0d1320] border border-gray-700 rounded-xl max-w-md w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-white">⚙️ Pengaturan</h2>
+            <button id="closeSettingsBtn" class="text-gray-500 hover:text-white text-2xl leading-none">×</button>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-300 mb-1">FMP API Key (opsional)</label>
+                <input type="text" id="fmpApiKeyInput" placeholder="Contoh: abc123def456..." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                <p class="text-[10px] text-gray-500 mt-1">
+                    Daftar gratis di <a href="https://site.financialmodelingprep.com/register" target="_blank" rel="noopener" class="text-blue-400 hover:underline">financialmodelingprep.com</a> (250 request/hari gratis).
+                    Tanpa API key, analisis fundamental akan terbatas (hanya data dari Yahoo chart).
+                </p>
+            </div>
+
+            <div class="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3 text-xs text-blue-300">
+                <p class="font-semibold mb-1">💡 Tips:</p>
+                <ul class="list-disc list-inside space-y-0.5 text-[10px]">
+                    <li>Teknikal: pakai data Yahoo Finance chart (gratis, otomatis)</li>
+                    <li>Fundamental: butuh FMP API key untuk data lengkap (PER, PBV, ROE, dll.)</li>
+                    <li>Berita: pakai Yahoo Finance search (gratis, otomatis)</li>
+                </ul>
+            </div>
+
+            <div class="flex gap-2">
+                <button id="saveSettingsBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition">Simpan</button>
+                <button id="cancelSettingsBtn" class="flex-1 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm font-medium transition">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -283,14 +594,14 @@ const SCREENER_SYMBOLS = [
     { market: 'CRYPTO', unified: 'SOLUSD',  name: 'Solana' },
     { market: 'CRYPTO', unified: 'XRPUSD',  name: 'XRP' },
     { market: 'CRYPTO', unified: 'DOGEUSD', name: 'Dogecoin' },
-    
+
     { market: 'NASDAQ', unified: 'AAPL',    name: 'Apple' },
     { market: 'NASDAQ', unified: 'TSLA',    name: 'Tesla' },
     { market: 'NASDAQ', unified: 'NVDA',    name: 'NVIDIA' },
     { market: 'NASDAQ', unified: 'AMZN',    name: 'Amazon' },
     { market: 'NASDAQ', unified: 'MSFT',    name: 'Microsoft' },
     { market: 'NASDAQ', unified: 'META',    name: 'Meta' },
-    
+
     { market: 'IDX',    unified: 'BBCA',    name: 'Bank BCA' },
     { market: 'IDX',    unified: 'BBRI',    name: 'Bank BRI' },
     { market: 'IDX',    unified: 'TLKM',    name: 'Telkom' },
@@ -299,9 +610,11 @@ const SCREENER_SYMBOLS = [
     { market: 'IDX',    unified: 'BMRI',    name: 'Bank Mandiri' }
 ];
 
-let currentTVSymbol = '', currentYahooSymbol = '';
+let currentTVSymbol = '', currentYahooSymbol = '', currentMarket = 'NASDAQ';
 let yahooChart = null, candleSeries = null, ema50Series = null, ema200Series = null, bbUpperSeries = null, bbLowerSeries = null, volumeSeries = null;
 let lastSignals = {}, autoScanInterval = null, notificationsEnabled = false;
+let lastTechAnalysis = null, lastFundAnalysis = null, lastNewsAnalysis = null;
+let mainAnalysisInProgress = false; // flag untuk pause screener saat main analysis jalan
 
 // ═══════════════════════════════════════════════════════════
 //  FUNGSI MAPPING & PENCARIAN
@@ -309,8 +622,8 @@ let lastSignals = {}, autoScanInterval = null, notificationsEnabled = false;
 function mapSymbol(market, unified) {
     let sym = unified.toUpperCase().replace('.JK', '').replace('=X', '');
     let tv = '', yahoo = '';
-    if (market === 'NASDAQ') { tv = `NASDAQ:${sym}`; yahoo = sym; } 
-    else if (market === 'IDX') { tv = `IDX:${sym}`; yahoo = `${sym}.JK`; } 
+    if (market === 'NASDAQ') { tv = `NASDAQ:${sym}`; yahoo = sym; }
+    else if (market === 'IDX') { tv = `IDX:${sym}`; yahoo = `${sym}.JK`; }
     else if (market === 'CRYPTO') {
         let coin = sym.replace(/(USDT|BUSD|USD)$/, '');
         tv = `BINANCE:${coin}USDT`; yahoo = `${coin}-USD`;
@@ -320,8 +633,9 @@ function mapSymbol(market, unified) {
 
 function loadFromInput() {
     const market = document.getElementById('marketSelect').value;
+    currentMarket = market;
     const val = document.getElementById('symbolInput').value.trim().toUpperCase();
-    if (!val) return;
+    if (!val) return Promise.resolve();
     const mapped = mapSymbol(market, val);
     currentTVSymbol = mapped.tv;
     currentYahooSymbol = mapped.yahoo;
@@ -332,92 +646,908 @@ function loadFromInput() {
     }
     document.getElementById('tvSymbolLabel').textContent = currentTVSymbol;
     loadTradingViewChart(currentTVSymbol, interval);
-    loadAnalysis();
+    return runFullAnalysis();
 }
 
 // ═══════════════════════════════════════════════════════════
-//  INDIKATOR TEKNIKAL
+//  INDIKATOR TEKNIKAL (FORMULA VERIFIED)
 // ═══════════════════════════════════════════════════════════
-function calculateSMA(d, p) { const r = new Array(d.length).fill(null); for (let i=p-1;i<d.length;i++){let s=0;for(let j=0;j<p;j++)s+=d[i-j];r[i]=s/p;} return r; }
-function calculateEMA(d, p) { const r = new Array(d.length).fill(null); const m = 2/(p+1); let e=null; for(let i=0;i<d.length;i++){if(i<p-1)continue;else if(i===p-1){let s=0;for(let j=0;j<p;j++)s+=d[i-j];e=s/p;r[i]=e;}else{e=(d[i]-e)*m+e;r[i]=e;}} return r; }
-function calculateRSI(d, p=14) { const r = new Array(d.length).fill(null); let ag=0,al=0; for(let i=1;i<d.length;i++){const c=d[i]-d[i-1];const g=c>0?c:0,l=c<0?Math.abs(c):0;if(i<=p){ag+=g;al+=l;if(i===p){ag/=p;al/=p;r[i]=100-(100/(1+(al===0?100:ag/al)));}}else{ag=(ag*(p-1)+g)/p;al=(al*(p-1)+l)/p;r[i]=100-(100/(1+(al===0?100:ag/al)));}} return r; }
-function calculateMACD(d, f=12, s=26, sig=9) { const ef=calculateEMA(d,f),es=calculateEMA(d,s); const ml=d.map((_,i)=>(ef[i]!==null&&es[i]!==null)?ef[i]-es[i]:null); const vs=ml.findIndex(v=>v!==null); const mv=ml.slice(vs),sv=calculateEMA(mv,sig); const sl=new Array(d.length).fill(null); for(let i=0;i<sv.length;i++)if(sv[i]!==null)sl[vs+i]=sv[i]; const h=d.map((_,i)=>(ml[i]!==null&&sl[i]!==null)?ml[i]-sl[i]:null); return {macdLine:ml,signalLine:sl,histogram:h}; }
-function calculateBB(d, p=20, dev=2) { const m=calculateSMA(d,p); const u=new Array(d.length).fill(null),l=new Array(d.length).fill(null); for(let i=p-1;i<d.length;i++){if(m[i]===null)continue;let sq=0;for(let j=0;j<p;j++)sq+=Math.pow(d[i-j]-m[i],2);const sd=Math.sqrt(sq/p);u[i]=m[i]+dev*sd;l[i]=m[i]-dev*sd;} return {middle:m,upper:u,lower:l}; }
+// SMA: simple moving average
+function calculateSMA(d, p) {
+    const r = new Array(d.length).fill(null);
+    for (let i = p - 1; i < d.length; i++) {
+        let s = 0;
+        for (let j = 0; j < p; j++) s += d[i - j];
+        r[i] = s / p;
+    }
+    return r;
+}
+
+// EMA: seed with SMA of first p values, then recursive EMA
+function calculateEMA(d, p) {
+    const r = new Array(d.length).fill(null);
+    const m = 2 / (p + 1);
+    let e = null;
+    for (let i = 0; i < d.length; i++) {
+        if (i < p - 1) continue;
+        else if (i === p - 1) {
+            let s = 0;
+            for (let j = 0; j < p; j++) s += d[i - j];
+            e = s / p;
+            r[i] = e;
+        } else {
+            e = (d[i] - e) * m + e;
+            r[i] = e;
+        }
+    }
+    return r;
+}
+
+// RSI: Wilder's smoothing method (industry standard)
+function calculateRSI(d, p = 14) {
+    const r = new Array(d.length).fill(null);
+    if (d.length < p + 1) return r;
+    let ag = 0, al = 0;
+    for (let i = 1; i <= p; i++) {
+        const c = d[i] - d[i - 1];
+        const g = c > 0 ? c : 0;
+        const l = c < 0 ? Math.abs(c) : 0;
+        ag += g; al += l;
+    }
+    ag /= p; al /= p;
+    r[p] = al === 0 ? 100 : 100 - (100 / (1 + ag / al));
+    for (let i = p + 1; i < d.length; i++) {
+        const c = d[i] - d[i - 1];
+        const g = c > 0 ? c : 0;
+        const l = c < 0 ? Math.abs(c) : 0;
+        ag = (ag * (p - 1) + g) / p;
+        al = (al * (p - 1) + l) / p;
+        r[i] = al === 0 ? 100 : 100 - (100 / (1 + ag / al));
+    }
+    return r;
+}
+
+// MACD: EMA(12) - EMA(26), Signal = EMA(9) of MACD line
+function calculateMACD(d, f = 12, s = 26, sig = 9) {
+    const ef = calculateEMA(d, f), es = calculateEMA(d, s);
+    const ml = d.map((_, i) => (ef[i] !== null && es[i] !== null) ? ef[i] - es[i] : null);
+    const vs = ml.findIndex(v => v !== null);
+    if (vs === -1) return { macdLine: ml, signalLine: new Array(d.length).fill(null), histogram: new Array(d.length).fill(null) };
+    const mv = ml.slice(vs).map(v => v === null ? 0 : v);
+    const sv = calculateEMA(mv, sig);
+    const sl = new Array(d.length).fill(null);
+    for (let i = 0; i < sv.length; i++) if (sv[i] !== null) sl[vs + i] = sv[i];
+    const h = d.map((_, i) => (ml[i] !== null && sl[i] !== null) ? ml[i] - sl[i] : null);
+    return { macdLine: ml, signalLine: sl, histogram: h };
+}
+
+// Bollinger Bands: SMA(20) ± 2 * population_std
+function calculateBB(d, p = 20, dev = 2) {
+    const m = calculateSMA(d, p);
+    const u = new Array(d.length).fill(null), l = new Array(d.length).fill(null);
+    for (let i = p - 1; i < d.length; i++) {
+        if (m[i] === null) continue;
+        let sq = 0;
+        for (let j = 0; j < p; j++) sq += Math.pow(d[i - j] - m[i], 2);
+        const sd = Math.sqrt(sq / p);
+        u[i] = m[i] + dev * sd;
+        l[i] = m[i] - dev * sd;
+    }
+    return { middle: m, upper: u, lower: l };
+}
+
+// Stochastic Oscillator %K(14) %D(3)
+function calculateStochastic(highs, lows, closes, kp = 14, dp = 3) {
+    const k = new Array(closes.length).fill(null);
+    const d = new Array(closes.length).fill(null);
+    for (let i = kp - 1; i < closes.length; i++) {
+        let hh = -Infinity, ll = Infinity;
+        for (let j = 0; j < kp; j++) {
+            if (highs[i - j] > hh) hh = highs[i - j];
+            if (lows[i - j] < ll) ll = lows[i - j];
+        }
+        k[i] = hh === ll ? 50 : ((closes[i] - ll) / (hh - ll)) * 100;
+    }
+    // %D = SMA of %K
+    for (let i = kp + dp - 2; i < closes.length; i++) {
+        let s = 0, valid = true;
+        for (let j = 0; j < dp; j++) {
+            if (k[i - j] === null) { valid = false; break; }
+            s += k[i - j];
+        }
+        if (valid) d[i] = s / dp;
+    }
+    return { k, d };
+}
+
+// ATR: Average True Range (Wilder's method)
+function calculateATR(highs, lows, closes, p = 14) {
+    const tr = new Array(closes.length).fill(null);
+    for (let i = 1; i < closes.length; i++) {
+        const h_l = highs[i] - lows[i];
+        const h_pc = Math.abs(highs[i] - closes[i - 1]);
+        const l_pc = Math.abs(lows[i] - closes[i - 1]);
+        tr[i] = Math.max(h_l, h_pc, l_pc);
+    }
+    const atr = new Array(closes.length).fill(null);
+    if (closes.length < p + 1) return atr;
+    let sum = 0;
+    for (let i = 1; i <= p; i++) sum += tr[i];
+    atr[p] = sum / p;
+    for (let i = p + 1; i < closes.length; i++) {
+        atr[i] = (atr[i - 1] * (p - 1) + tr[i]) / p;
+    }
+    return atr;
+}
 
 // ═══════════════════════════════════════════════════════════
-//  FETCH DATA
+//  FETCH DATA (parallel multi-proxy via Promise.any)
 // ═══════════════════════════════════════════════════════════
-async function fetchYahooData(symbol, interval = '1d', range = '1y') {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
-    const proxies = [
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-        `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-        `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`
-    ];
-    for (const p of proxies) {
+// Each proxy: function(url) -> proxied URL
+// Some proxies wrap response (e.g. allorigins-get returns {contents: "..."})
+const PROXIES = [
+    { name: 'allorigins-get', fn: (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: 'json' },
+    { name: 'allorigins-raw', fn: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`, wrap: null },
+    { name: 'codetabs', fn: (u) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`, wrap: null },
+    { name: 'thingproxy', fn: (u) => `https://thingproxy.freeboard.io/fetch/${u}`, wrap: null },
+];
+
+// In-memory cache untuk reduce proxy calls (TTL 60s)
+const _cache = new Map();
+function cacheGet(key) {
+    const e = _cache.get(key);
+    if (!e) return null;
+    if (Date.now() - e.ts > 60000) { _cache.delete(key); return null; }
+    return e.value;
+}
+function cacheSet(key, value) { _cache.set(key, { value, ts: Date.now() }); }
+
+async function fetchSingleProxy(proxiedUrl, asJson, wrap, timeoutMs) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+        const r = await fetch(proxiedUrl, { signal: ctrl.signal, headers: { 'Accept': '*/*' } });
+        clearTimeout(t);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (asJson) {
+            if (wrap === 'json') {
+                // allorigins-get returns {contents: "<stringified JSON>"}
+                const wrapped = await r.json();
+                if (!wrapped.contents) throw new Error('Empty contents');
+                return JSON.parse(wrapped.contents);
+            }
+            return await r.json();
+        } else {
+            const text = await r.text();
+            // For wrapped, extract contents
+            if (wrap === 'json') {
+                try {
+                    const wrapped = JSON.parse(text);
+                    if (wrapped.contents) return wrapped.contents;
+                } catch (e) {}
+            }
+            return text;
+        }
+    } catch (e) {
+        clearTimeout(t);
+        throw e;
+    }
+}
+
+async function fetchWithProxies(url, asJson = true, timeoutMs = 15000, retries = 2) {
+    // Check cache
+    const cacheKey = (asJson ? 'json:' : 'text:') + url;
+    const cached = cacheGet(cacheKey);
+    if (cached) return cached;
+
+    let lastErr = null;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        // Build fetch promises for all proxies in parallel
+        const fetchPromises = PROXIES.map(p => {
+            const proxiedUrl = p.fn(url);
+            return fetchSingleProxy(proxiedUrl, asJson, p.wrap, timeoutMs)
+                .then(result => ({ result, proxy: p.name }));
+        });
+
+        // Try Promise.any - first one to succeed wins
         try {
-            const r = await fetch(p);
-            if (!r.ok) continue;
-            const j = await r.json();
-            if (!j.chart || !j.chart.result || !j.chart.result[0]) continue;
-            const res = j.chart.result[0], t = res.timestamp || [], q = res.indicators.quote[0], c = [];
-            for (let i = 0; i < t.length; i++) {
-                if (q.open[i] == null || q.close[i] == null) continue;
-                c.push({ time: t[i], open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i], volume: q.volume[i] || 0 });
-            } return { candles: c };
-        } catch (e) {}
-    } throw new Error(`Gagal fetch ${symbol}`);
+            const winner = await Promise.any(fetchPromises);
+            if (winner && winner.result) {
+                cacheSet(cacheKey, winner.result);
+                console.log(`✓ ${url.substring(0, 60)}... via ${winner.proxy}` + (attempt > 0 ? ` (retry ${attempt})` : ''));
+                return winner.result;
+            }
+        } catch (aggregateError) {
+            const errs = aggregateError.errors || [];
+            lastErr = errs.length > 0 ? errs[0] : new Error('All proxies failed');
+            // Brief pause before retry (1.5s, increasing each retry)
+            if (attempt < retries) await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+        }
+    }
+    const msg = lastErr ? lastErr.message : 'No proxy returned data';
+    throw new Error(`Gagal fetch setelah ${retries + 1}x percobaan: ${msg.substring(0, 80)}`);
+}
+
+async function fetchYahooChart(symbol, interval = '1d', range = '1y') {
+    // Gunakan query2 (sering lebih reliable daripada query1)
+    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+    const j = await fetchWithProxies(url, true);
+    if (!j.chart || !j.chart.result || !j.chart.result[0]) throw new Error('Data chart tidak valid');
+    const res = j.chart.result[0], t = res.timestamp || [], q = res.indicators.quote[0], c = [];
+    for (let i = 0; i < t.length; i++) {
+        if (q.open[i] == null || q.close[i] == null) continue;
+        c.push({ time: t[i], open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i], volume: q.volume[i] || 0 });
+    }
+    return { candles: c, meta: res.meta || {} };
+}
+
+// Versi dengan retry lebih banyak + timeout lebih lama (untuk main analysis)
+async function fetchYahooChartLong(symbol, interval = '1d', range = '1y') {
+    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+    const j = await fetchWithProxies(url, true, 20000, 3); // 20s timeout, 3 retries (4 attempts total)
+    if (!j.chart || !j.chart.result || !j.chart.result[0]) throw new Error('Data chart tidak valid');
+    const res = j.chart.result[0], t = res.timestamp || [], q = res.indicators.quote[0], c = [];
+    for (let i = 0; i < t.length; i++) {
+        if (q.open[i] == null || q.close[i] == null) continue;
+        c.push({ time: t[i], open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i], volume: q.volume[i] || 0 });
+    }
+    return { candles: c, meta: res.meta || {} };
+}
+
+async function fetchYahooQuoteSummary(symbol) {
+    // 1. Coba FMP (Financial Modeling Prep) jika user punya API key
+    if (window.FMP_API_KEY) {
+        try {
+            const fmpData = await fetchFMPData(symbol);
+            if (fmpData) return fmpData;
+        } catch (e) { console.log('FMP fetch failed:', e.message); }
+    }
+
+    // 2. Coba Yahoo v10 quoteSummary (perlu crumb - sering gagal)
+    const modules = 'financialData,summaryDetail,defaultKeyStatistics,incomeStatementHistory,balanceSheetHistory,cashflowStatementHistory,calendarEvents,assetProfile,price,summaryProfile';
+    try {
+        const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=${modules}`;
+        const j = await fetchWithProxies(url, true, 10000, 2);
+        if (j && j.quoteSummary && j.quoteSummary.result && j.quoteSummary.result[0]) {
+            return j.quoteSummary.result[0];
+        }
+    } catch (e) { /* silently fall through */ }
+
+    // 3. Return null - akan dipakai Yahoo chart meta sebagai fallback
+    return null;
+}
+
+// === FMP (Financial Modeling Prep) untuk fundamental data lengkap ===
+async function fetchFMPData(symbol) {
+    // FMP menggunakan format yang berbeda untuk IDX (perlu .JK suffix)
+    const fmpSymbol = symbol.toUpperCase().replace('.JK', '.JK'); // FMP supports .JK
+    const key = window.FMP_API_KEY;
+    const base = 'https://financialmodelingprep.com/api/v3';
+
+    // Fetch profile + ratios + income + balance + cashflow in parallel
+    const [profile, ratios, income, balance, cashflow] = await Promise.allSettled([
+        fetchWithProxies(`${base}/profile/${fmpSymbol}?apikey=${key}`, true, 10000),
+        fetchWithProxies(`${base}/ratios-ttm/${fmpSymbol}?apikey=${key}`, true, 10000),
+        fetchWithProxies(`${base}/income-statement/${fmpSymbol}?period=annual&apikey=${key}`, true, 10000),
+        fetchWithProxies(`${base}/balance-sheet-statement/${fmpSymbol}?period=annual&apikey=${key}`, true, 10000),
+        fetchWithProxies(`${base}/cash-flow-statement/${fmpSymbol}?period=annual&apikey=${key}`, true, 10000),
+    ]);
+
+    const prof = profile.status === 'fulfilled' && profile.value && profile.value[0] ? profile.value[0] : null;
+    if (!prof) return null;
+
+    const rat = ratios.status === 'fulfilled' && ratios.value && ratios.value[0] ? ratios.value[0] : {};
+    const inc = income.status === 'fulfilled' && income.value && income.value[0] ? income.value[0] : {};
+    const bal = balance.status === 'fulfilled' && balance.value && balance.value[0] ? balance.value[0] : {};
+    const cf = cashflow.status === 'fulfilled' && cashflow.value && cashflow.value[0] ? cashflow.value[0] : {};
+
+    // Convert FMP structure to Yahoo quoteSummary-like format (reuse analyzeFundamental)
+    return {
+        _source: 'fmp',
+        price: {
+            longName: prof.companyName,
+            shortName: prof.companyName,
+            marketCap: prof.mktCap,
+            currency: prof.currency,
+        },
+        assetProfile: {
+            sector: prof.sector,
+            industry: prof.industry,
+            website: prof.website,
+            description: prof.description,
+        },
+        summaryDetail: {
+            trailingPE: prof.pe ? prof.pe : null,
+            forwardPE: prof.pe ? prof.pe : null,
+            priceToBook: prof.pb ? prof.pb : null,
+            dividendYield: prof.lastDiv ? (prof.lastDiv / prof.price) : null,
+            beta: prof.beta,
+            marketCap: prof.mktCap,
+            fiftyTwoWeekHigh: null,
+            fiftyTwoWeekLow: null,
+            currency: prof.currency,
+        },
+        defaultKeyStatistics: {
+            trailingEps: prof.eps,
+            forwardEps: prof.eps,
+            beta: prof.beta,
+            priceToBook: prof.pb,
+        },
+        financialData: {
+            returnOnEquity: rat.returnOnEquityTTM ? rat.returnOnEquityTTM / 100 : null,
+            returnOnAssets: rat.returnOnAssetsTTM ? rat.returnOnAssetsTTM / 100 : null,
+            operatingMargins: rat.operatingProfitMarginTTM ? rat.operatingProfitMarginTTM / 100 : null,
+            profitMargins: rat.netProfitMarginTTM ? rat.netProfitMarginTTM / 100 : null,
+            grossMargins: rat.grossProfitMarginTTM ? rat.grossProfitMarginTTM / 100 : null,
+            totalRevenue: inc.revenue,
+            revenuePerShare: rat.revenuePerShareTTM ? rat.revenuePerShareTTM : null,
+            trailingEps: prof.eps,
+            forwardEps: prof.eps,
+            operatingCashflow: cf.operatingCashFlow,
+            freeCashflow: cf.freeCashFlow,
+            ebitda: inc.ebitda,
+            currentRatio: rat.currentRatioTTM ? rat.currentRatioTTM : null,
+            quickRatio: rat.quickRatioTTM ? rat.quickRatioTTM : null,
+            debtToEquity: bal.totalDebt && bal.totalStockholdersEquity ? bal.totalDebt / bal.totalStockholdersEquity : null,
+        },
+        incomeStatementHistory: {
+            incomeStatementHistory: income.status === 'fulfilled' && income.value ? income.value.slice(0, 4) : [],
+        },
+        balanceSheetHistory: {
+            balanceSheetStatements: balance.status === 'fulfilled' && balance.value ? balance.value.slice(0, 4) : [],
+        },
+        cashflowStatementHistory: {
+            cashflowStatements: cashflow.status === 'fulfilled' && cashflow.value ? cashflow.value.slice(0, 4) : [],
+        },
+    };
+}
+
+async function fetchYahooNews(symbol, count = 20) {
+    const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(symbol)}&newsCount=${count}&quotesCount=0`;
+    try {
+        const j = await fetchWithProxies(url, true, 10000);
+        if (j.news) return j.news;
+    } catch (e) {}
+    return [];
+}
+
+async function fetchMacroNews(query, lang = 'en') {
+    // Yahoo Finance search hanya return news untuk symbol saham/index
+    // Untuk macro news, gunakan index symbol sebagai proxy:
+    // - US: ^GSPC (S&P 500) atau ^DJI (Dow Jones)
+    // - ID: ^JKSE (IHSG)
+    // - Crypto: BTC-USD (bitcoin news sebagai proxy)
+    const macroSymbol = lang === 'id' ? '^JKSE' : '^GSPC';
+    const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(macroSymbol)}&newsCount=15&quotesCount=0`;
+    try {
+        const j = await fetchWithProxies(url, true, 12000);
+        if (j.news && Array.isArray(j.news)) {
+            return j.news.map(n => ({
+                title: n.title || '',
+                link: n.link || (n.url || '#'),
+                publisher: n.publisher || 'Yahoo Finance',
+                published: n.providerPublishTime ? new Date(n.providerPublishTime * 1000) : new Date(),
+                description: n.summary || ''
+            }));
+        }
+    } catch (e) {
+        console.log('Macro news fetch failed:', e.message);
+    }
+    return [];
+}
+
+function stripHtml(html) {
+    return html.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 }
 
 // ═══════════════════════════════════════════════════════════
-//  SIGNAL GENERATOR BAHASA AWAM
+//  ANALISIS TEKNIKAL (score -10..10)
 // ═══════════════════════════════════════════════════════════
-function generateSimpleSignal(c, ind) {
-    const li = c.length - 1, cl = c[li].close;
-    const e50 = ind.ema50[li], e200 = ind.ema200[li], rsi = ind.rsi[li];
-    const mv = ind.macd.macdLine[li], sv = ind.macd.signalLine[li], hv = ind.macd.histogram[li];
-    const u = ind.bb.upper[li], l = ind.bb.lower[li], m = ind.bb.middle[li];
-    let sc = 0, rs = [];
-    
-    // 1. TREND (EMA)
-    let trendText = "Tren belum jelas.";
+function analyzeTechnical(candles) {
+    if (candles.length < 50) return { score: 0, signal: 'HOLD', reasons: ['Data tidak cukup untuk analisis teknikal'], details: {} };
+
+    const closes = candles.map(c => c.close);
+    const highs = candles.map(c => c.high);
+    const lows = candles.map(c => c.low);
+    const li = candles.length - 1;
+    const cl = closes[li];
+
+    const ema50 = calculateEMA(closes, 50);
+    const ema200 = calculateEMA(closes, 200);
+    const rsi = calculateRSI(closes, 14);
+    const macd = calculateMACD(closes, 12, 26, 9);
+    const bb = calculateBB(closes, 20, 2);
+    const stoch = calculateStochastic(highs, lows, closes, 14, 3);
+    const atr = calculateATR(highs, lows, closes, 14);
+
+    let score = 0;
+    const reasons = [];
+    const details = {};
+
+    // 1. TREND (EMA 50 vs 200) - max 4 points
+    const e50 = ema50[li], e200 = ema200[li];
+    let trendText = 'Tren belum jelas';
     if (e50 !== null && e200 !== null) {
-        if (e50 > e200) { sc += 2; trendText = "Lagi naik (Uptrend). Banyak yang semangat beli."; rs.push("✅ Tren naik"); } 
-        else { sc -= 2; trendText = "Lagi turun (Downtrend). Banyak yang panik jual."; rs.push("❌ Tren turun"); }
+        if (e50 > e200) {
+            score += 3;
+            trendText = 'Uptrend (EMA50 di atas EMA200)';
+            reasons.push('✅ Tren naik (Golden Cross)');
+            if (cl > e50) { score += 1; reasons.push('✅ Harga di atas EMA50 (trend kuat)'); }
+        } else {
+            score -= 3;
+            trendText = 'Downtrend (EMA50 di bawah EMA200)';
+            reasons.push('❌ Tren turun (Death Cross)');
+            if (cl < e50) { score -= 1; reasons.push('❌ Harga di bawah EMA50 (trend kuat ke bawah)'); }
+        }
+        details.ema50 = e50; details.ema200 = e200;
     }
 
-    // 2. RSI (Kejenuhan)
-    let rsiText = "Harga masih wajar.";
-    if (rsi !== null) {
-        if (rsi < 30) { sc += 2; rsiText = "Harga lagi murah banget (Oversold). Peluang beli."; rs.push("✅ Harga murah"); } 
-        else if (rsi > 70) { sc -= 2; rsiText = "Harga lagi mahal banget (Overbought). Hati-hati jatuh."; rs.push("❌ Harga mahal"); } 
-        else if (rsi < 45) { sc += 1; rsiText = "Harga mulai murah, ada peluang."; } 
-        else if (rsi > 55) { sc -= 1; rsiText = "Harga mulai mahal, hati-hati."; } 
+    // 2. RSI - max 3 points
+    const rsiV = rsi[li];
+    let rsiText = 'RSI netral';
+    if (rsiV !== null) {
+        if (rsiV < 30) { score += 3; rsiText = `Oversold (RSI ${rsiV.toFixed(1)}) - peluang beli`; reasons.push(`✅ RSI oversold (${rsiV.toFixed(1)})`); }
+        else if (rsiV > 70) { score -= 3; rsiText = `Overbought (RSI ${rsiV.toFixed(1)}) - hati-hati`; reasons.push(`❌ RSI overbought (${rsiV.toFixed(1)})`); }
+        else if (rsiV < 45) { score += 1; rsiText = `RSI mendekati oversold (${rsiV.toFixed(1)})`; }
+        else if (rsiV > 55) { score -= 1; rsiText = `RSI mendekati overbought (${rsiV.toFixed(1)})`; }
+        else { rsiText = `RSI netral (${rsiV.toFixed(1)})`; }
+        details.rsi = rsiV;
     }
 
-    // 3. MACD (Momentum)
-    let macdText = "Tenaga market seimbang.";
+    // 3. MACD - max 3 points
+    const mv = macd.macdLine[li], sv = macd.signalLine[li], hv = macd.histogram[li];
+    let macdText = 'MACD seimbang';
     if (mv !== null && sv !== null) {
-        if (mv > sv && hv > 0) { sc += 2; macdText = "Pembeli lagi kuat, harga siap naik."; rs.push("✅ Pembeli kuat"); } 
-        else if (mv < sv && hv < 0) { sc -= 2; macdText = "Penjual lagi kuat, harga siap turun."; rs.push("❌ Penjual kuat"); } 
+        if (mv > sv && hv > 0) { score += 2; macdText = 'Momentum beli kuat'; reasons.push('✅ MACD bullish (di atas signal)'); }
+        else if (mv < sv && hv < 0) { score -= 2; macdText = 'Momentum jual kuat'; reasons.push('❌ MACD bearish (di bawah signal)'); }
+        // Histogram trend
+        const prevH = macd.histogram[li - 1];
+        if (hv !== null && prevH !== null) {
+            if (hv > prevH && hv > 0) { score += 1; reasons.push('✅ Histogram MACD meningkat'); }
+            else if (hv < prevH && hv < 0) { score -= 1; reasons.push('❌ Histogram MACD menurun'); }
+        }
+        details.macd = mv; details.macdSignal = sv; details.macdHist = hv;
     }
 
-    // 4. Bollinger Bands
-    let bbText = "Harga di jalur normal.";
+    // 4. Bollinger - max 2 points
+    const u = bb.upper[li], l = bb.lower[li], m = bb.middle[li];
+    let bbText = 'Harga di tengah band';
     if (u !== null && l !== null) {
-        if (cl < l) { sc += 1; bbText = "Harga nabrak batas bawah, biasanya bakal mantul naik."; rs.push("✅ Mantul bawah"); } 
-        else if (cl > u) { sc -= 1; bbText = "Harga nabrak batas atas, biasanya bakal koreksi turun."; rs.push("❌ Mantul atas"); } 
+        if (cl < l) { score += 2; bbText = 'Harga menembus lower band - kemungkinan rebound'; reasons.push('✅ Harga di bawah BB lower'); }
+        else if (cl > u) { score -= 2; bbText = 'Harga menembus upper band - kemungkinan koreksi'; reasons.push('❌ Harga di atas BB upper'); }
+        else if (cl < m) { bbText = 'Harga di paruh bawah band'; }
+        else { bbText = 'Harga di paruh atas band'; }
+        details.bbUpper = u; details.bbLower = l; details.bbMiddle = m;
     }
-    
-    // Final Signal
-    let sig, ic, cn, simpleText;
-    if (sc >= 4) { sig = "STRONG BUY"; ic = "🟢"; cn = "signal-strong-buy"; simpleText = "BELI SEKARANG!"; }
-    else if (sc >= 2) { sig = "BUY"; ic = "🟩"; cn = "signal-buy"; simpleText = "BOLEH BELI / TAHAN"; }
-    else if (sc > -2) { sig = "HOLD"; ic = "⚪"; cn = "signal-hold"; simpleText = "TUNGGU DULU"; }
-    else if (sc > -4) { sig = "SELL"; ic = "🟥"; cn = "signal-sell"; simpleText = "JUAL / JANGAN BELI"; }
-    else { sig = "STRONG SELL"; ic = "🔴"; cn = "signal-strong-sell"; simpleText = "JUAL SEGERA!"; }
-    
-    return { signal: sig, simpleText, icon: ic, className: cn, score: sc, reasons: rs, trendText, rsiText, macdText, bbText, close: cl };
+
+    // 5. Stochastic - max 2 points
+    const kV = stoch.k[li], dV = stoch.d[li];
+    let stochText = 'Stochastic netral';
+    if (kV !== null && dV !== null) {
+        if (kV < 20) { score += 1; stochText = `Stochastic oversold (${kV.toFixed(1)})`; reasons.push(`✅ Stochastic oversold`); }
+        else if (kV > 80) { score -= 1; stochText = `Stochastic overbought (${kV.toFixed(1)})`; reasons.push(`❌ Stochastic overbought`); }
+        if (kV > dV && kV < 80) { score += 1; reasons.push('✅ Stochastic bullish cross'); }
+        else if (kV < dV && kV > 20) { score -= 1; reasons.push('❌ Stochastic bearish cross'); }
+        details.stochK = kV; details.stochD = dV;
+    }
+
+    // 6. ATR - volatility info (no direct score, but informative)
+    const atrV = atr[li];
+    let atrText = 'Volatilitas normal';
+    if (atrV !== null) {
+        const atrPct = (atrV / cl) * 100;
+        if (atrPct > 5) atrText = `Volatilitas tinggi (ATR ${atrPct.toFixed(1)}%)`;
+        else if (atrPct < 1) atrText = `Volatilitas rendah (ATR ${atrPct.toFixed(1)}%)`;
+        else atrText = `Volatilitas normal (ATR ${atrPct.toFixed(1)}%)`;
+        details.atr = atrV; details.atrPct = atrPct;
+    }
+
+    // Clamp score to -10..10
+    score = Math.max(-10, Math.min(10, score));
+
+    let signal, simpleText;
+    if (score >= 5) { signal = 'STRONG BUY'; simpleText = 'BELI SEKARANG'; }
+    else if (score >= 2) { signal = 'BUY'; simpleText = 'BOLEH BELI'; }
+    else if (score > -2) { signal = 'HOLD'; simpleText = 'TUNGGU DULU'; }
+    else if (score > -5) { signal = 'SELL'; simpleText = 'JUAL / JANGAN BELI'; }
+    else { signal = 'STRONG SELL'; simpleText = 'JUAL SEGERA'; }
+
+    return {
+        score, signal, simpleText, reasons,
+        trendText, rsiText, macdText, bbText, stochText, atrText,
+        details, ind: { ema50, ema200, rsi, macd, bb, stoch, atr }
+    };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ANALISIS FUNDAMENTAL (score 0..10)
+// ═══════════════════════════════════════════════════════════
+function safeNum(v) {
+    if (v === null || v === undefined) return null;
+    if (typeof v === 'object') {
+        if (v.fmt !== undefined) return parseFloat(v.fmt);
+        if (v.raw !== undefined) return v.raw;
+    }
+    const n = parseFloat(v);
+    return isNaN(n) ? null : n;
+}
+
+function fmtPct(n) {
+    if (n === null || n === undefined) return '—';
+    return (n >= 0 ? '+' : '') + (n * 100).toFixed(2) + '%';
+}
+
+function fmtNum(n, dec = 2) {
+    if (n === null || n === undefined) return '—';
+    return n.toFixed(dec);
+}
+
+function fmtBig(n) {
+    if (n === null || n === undefined) return '—';
+    const abs = Math.abs(n);
+    if (abs >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+    if (abs >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+    if (abs >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+    return n.toFixed(2);
+}
+
+function ratioColor(value, goodMax, badMin, neutralMin = null) {
+    if (value === null || value === undefined) return 'ratio-na';
+    if (neutralMin !== null) {
+        if (value <= goodMax) return 'ratio-good';
+        if (value >= badMin) return 'ratio-bad';
+        return 'ratio-neutral';
+    }
+    if (value <= goodMax) return 'ratio-good';
+    if (value >= badMin) return 'ratio-bad';
+    return 'ratio-neutral';
+}
+
+function analyzeFundamental(qs, market) {
+    if (!qs) return { score: 0, signal: 'N/A', reasons: ['Data fundamental tidak tersedia (mungkin saham tidak punya data lengkap di Yahoo)'], ratios: {} };
+
+    // Deteksi apakah qs hanya berisi chart-meta (fallback) - tandai sebagai N/A
+    const isChartMetaFallback = qs._source === 'chart-meta';
+    if (isChartMetaFallback) {
+        const ratios = {
+            companyName: qs.price?.longName || qs.price?.shortName || '—',
+            currency: qs.price?.currency || qs.summaryDetail?.currency,
+            fiftyTwoWeekHigh: qs.summaryDetail?.fiftyTwoWeekHigh,
+            fiftyTwoWeekLow: qs.summaryDetail?.fiftyTwoWeekLow,
+        };
+        return {
+            score: 0,
+            signal: 'N/A',
+            reasons: ['⚠️ Data fundamental terbatas - tidak bisa analisis mendalam'],
+            ratios
+        };
+    }
+
+    const fin = qs.financialData || {};
+    const sum = qs.summaryDetail || {};
+    const key = qs.defaultKeyStatistics || {};
+    const price = qs.price || {};
+    const asset = qs.assetProfile || {};
+    const income = qs.incomeStatementHistory?.incomeStatementHistory || [];
+    const balance = qs.balanceSheetHistory?.balanceSheetStatements || [];
+    const cashflow = qs.cashflowStatementHistory?.cashflowStatements || [];
+
+    const ratios = {};
+    const reasons = [];
+    let score = 0;
+    let maxScore = 0;
+
+    // Profile
+    ratios.companyName = price.longName || price.shortName || (asset && asset.name) || '—';
+    ratios.sector = asset.sector || asset.industry || '—';
+    ratios.website = asset.website || '';
+    ratios.marketCap = safeNum(sum.marketCap) || safeNum(price.marketCap);
+    ratios.currency = price.currency || sum.currency || 'USD';
+
+    // === VALUASI ===
+    ratios.pe = safeNum(sum.trailingPE) || safeNum(sum.forwardPE) || safeNum(key.trailingPE) || safeNum(key.forwardPE);
+    ratios.pb = safeNum(sum.priceToBook) || safeNum(key.priceToBook);
+    ratios.evEbitda = safeNum(key.enterpriseToEbitda) || safeNum(sum.enterpriseToEbitda);
+    ratios.ps = safeNum(key.priceToSalesTrailing12Months) || safeNum(sum.priceToSalesTrailing12Months);
+    ratios.divYield = safeNum(sum.dividendYield);
+    ratios.fwdPE = safeNum(sum.forwardPE);
+
+    // Score P/E
+    maxScore += 2;
+    if (ratios.pe !== null) {
+        if (ratios.pe < 15) { score += 2; reasons.push(`✅ P/E rendah (${ratios.pe.toFixed(1)}) - murah`); }
+        else if (ratios.pe < 25) { score += 1; reasons.push(`⚪ P/E wajar (${ratios.pe.toFixed(1)})`); }
+        else if (ratios.pe > 40) { score -= 1; reasons.push(`❌ P/E tinggi (${ratios.pe.toFixed(1)}) - mahal`); }
+        else { reasons.push(`⚪ P/E tinggi (${ratios.pe.toFixed(1)})`); }
+    }
+
+    // Score P/B
+    maxScore += 1;
+    if (ratios.pb !== null) {
+        if (ratios.pb < 1) { score += 1; reasons.push(`✅ P/B < 1 (${ratios.pb.toFixed(2)}) - di bawah nilai buku`); }
+        else if (ratios.pb > 5) { score -= 1; reasons.push(`❌ P/B tinggi (${ratios.pb.toFixed(2)})`); }
+    }
+
+    // Dividend yield
+    maxScore += 1;
+    if (ratios.divYield !== null && ratios.divYield > 0) {
+        if (ratios.divYield > 0.04) { score += 1; reasons.push(`✅ Dividen tinggi (${(ratios.divYield * 100).toFixed(2)}%)`); }
+        else if (ratios.divYield > 0.01) { score += 0.5; reasons.push(`⚪ Dividen ${(ratios.divYield * 100).toFixed(2)}%`); }
+    }
+
+    // === PROFITABILITAS ===
+    ratios.roe = safeNum(fin.returnOnEquity);
+    ratios.roa = safeNum(fin.returnOnAssets);
+    ratios.operatingMargin = safeNum(fin.operatingMargins);
+    ratios.profitMargin = safeNum(fin.profitMargins);
+    ratios.grossMargin = safeNum(fin.grossMargins);
+    ratios.eps = safeNum(fin.trailingEps) || safeNum(key.trailingEps);
+    ratios.fwdEps = safeNum(fin.forwardEps);
+    ratios.revenue = safeNum(fin.totalRevenue);
+    ratios.revenuePerShare = safeNum(fin.revenuePerShare);
+    ratios.ebitda = safeNum(fin.ebitda);
+    ratios.fcf = safeNum(fin.freeCashflow) || safeNum(fin.operatingCashflow);
+    ratios.opcf = safeNum(fin.operatingCashflow);
+
+    // Score ROE
+    maxScore += 2;
+    if (ratios.roe !== null) {
+        if (ratios.roe > 0.20) { score += 2; reasons.push(`✅ ROE tinggi (${(ratios.roe * 100).toFixed(1)}%)`); }
+        else if (ratios.roe > 0.10) { score += 1; reasons.push(`⚪ ROE wajar (${(ratios.roe * 100).toFixed(1)}%)`); }
+        else if (ratios.roe < 0) { score -= 1; reasons.push(`❌ ROE negatif (${(ratios.roe * 100).toFixed(1)}%)`); }
+    }
+
+    // Score Profit Margin
+    maxScore += 1;
+    if (ratios.profitMargin !== null) {
+        if (ratios.profitMargin > 0.15) { score += 1; reasons.push(`✅ Margin laba tinggi (${(ratios.profitMargin * 100).toFixed(1)}%)`); }
+        else if (ratios.profitMargin < 0) { score -= 1; reasons.push(`❌ Margin laba negatif (rugi)`); }
+    }
+
+    // === KESEHATAN FINANSIAL ===
+    ratios.der = safeNum(fin.debtToEquity);
+    ratios.currentRatio = safeNum(fin.currentRatio);
+    ratios.quickRatio = safeNum(fin.quickRatio);
+    ratios.debtToAsset = safeNum(fin.debtToAsset) || (balance[0] && balance[0].totalDebt && balance[0].totalAssets ? safeNum(balance[0].totalDebt) / safeNum(balance[0].totalAssets) : null);
+    ratios.beta = safeNum(sum.beta) || safeNum(key.beta);
+
+    // Score Debt/Equity
+    maxScore += 2;
+    if (ratios.der !== null) {
+        const derAbs = Math.abs(ratios.der);
+        if (derAbs < 0.5) { score += 2; reasons.push(`✅ Utang rendah (DER ${derAbs.toFixed(2)})`); }
+        else if (derAbs < 1.5) { score += 1; reasons.push(`⚪ DER wajar (${derAbs.toFixed(2)})`); }
+        else if (derAbs > 3) { score -= 1; reasons.push(`❌ Utang tinggi (DER ${derAbs.toFixed(2)})`); }
+    }
+
+    // Score Current Ratio
+    maxScore += 1;
+    if (ratios.currentRatio !== null) {
+        if (ratios.currentRatio > 1.5) { score += 1; reasons.push(`✅ Likuiditas kuat (CR ${ratios.currentRatio.toFixed(2)})`); }
+        else if (ratios.currentRatio < 1) { score -= 1; reasons.push(`❌ Likuiditas lemah (CR ${ratios.currentRatio.toFixed(2)})`); }
+    }
+
+    // === PERTUMBUHAN (dari income statement history) ===
+    if (income.length >= 2) {
+        const cur = income[0], prev = income[income.length - 1];
+        const curRev = safeNum(cur.totalRevenue), prevRev = safeNum(prev.totalRevenue);
+        const curNI = safeNum(cur.netIncome), prevNI = safeNum(prev.netIncome);
+        if (curRev && prevRev && prevRev > 0) {
+            ratios.revGrowth = (curRev - prevRev) / Math.abs(prevRev);
+            maxScore += 1;
+            if (ratios.revGrowth > 0.15) { score += 1; reasons.push(`✅ Pertumbuhan revenue tinggi (${(ratios.revGrowth * 100).toFixed(1)}%/yr)`); }
+            else if (ratios.revGrowth < 0) { score -= 1; reasons.push(`❌ Revenue turun (${(ratios.revGrowth * 100).toFixed(1)}%/yr)`); }
+        }
+        if (curNI && prevNI && prevNI > 0) {
+            ratios.earnGrowth = (curNI - prevNI) / Math.abs(prevNI);
+            maxScore += 1;
+            if (ratios.earnGrowth > 0.20) { score += 1; reasons.push(`✅ Pertumbuhan laba tinggi (${(ratios.earnGrowth * 100).toFixed(1)}%/yr)`); }
+            else if (ratios.earnGrowth < 0) { score -= 1; reasons.push(`❌ Laba turun (${(ratios.earnGrowth * 100).toFixed(1)}%/yr)`); }
+        }
+    }
+
+    // Yahoo juga sediakan earningsGrowth langsung
+    if (ratios.earnGrowth === null || ratios.earnGrowth === undefined) {
+        const eg = safeNum(fin.earningsGrowth) || safeNum(fin.earningsQuarterlyGrowth);
+        if (eg !== null) {
+            ratios.earnGrowth = eg;
+            maxScore += 1;
+            if (eg > 0.20) { score += 1; reasons.push(`✅ Pertumbuhan laba QoQ ${(eg * 100).toFixed(1)}%`); }
+            else if (eg < 0) { score -= 1; reasons.push(`❌ Laba QoQ turun ${(eg * 100).toFixed(1)}%`); }
+        }
+    }
+    if (ratios.revGrowth === null || ratios.revGrowth === undefined) {
+        const rg = safeNum(fin.revenueGrowth) || safeNum(fin.revenueQuarterlyGrowth);
+        if (rg !== null) {
+            ratios.revGrowth = rg;
+            maxScore += 1;
+            if (rg > 0.15) { score += 1; reasons.push(`✅ Pertumbuhan revenue QoQ ${(rg * 100).toFixed(1)}%`); }
+            else if (rg < 0) { score -= 1; reasons.push(`❌ Revenue QoQ turun ${(rg * 100).toFixed(1)}%`); }
+        }
+    }
+
+    // Free Cash Flow
+    maxScore += 1;
+    if (ratios.fcf !== null && ratios.fcf > 0) {
+        score += 1;
+        reasons.push(`✅ Free Cash Flow positif (${fmtBig(ratios.fcf)})`);
+    } else if (ratios.fcf !== null && ratios.fcf < 0) {
+        score -= 1;
+        reasons.push(`❌ Free Cash Flow negatif (${fmtBig(ratios.fcf)})`);
+    }
+
+    // Normalisasi score ke 0..10
+    const normalizedScore = maxScore > 0 ? Math.max(0, Math.min(10, (score / maxScore) * 10)) : 0;
+
+    let signal;
+    if (normalizedScore >= 7) signal = 'STRONG BUY';
+    else if (normalizedScore >= 5) signal = 'BUY';
+    else if (normalizedScore >= 3) signal = 'HOLD';
+    else if (normalizedScore >= 1.5) signal = 'SELL';
+    else signal = 'STRONG SELL';
+
+    if (reasons.length === 0) reasons.push('⚠️ Data fundamental terbatas - tidak bisa analisis mendalam');
+
+    return { score: normalizedScore, signal, reasons, ratios };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ANALISIS BERITA & SENTIMEN (score -10..10)
+// ═══════════════════════════════════════════════════════════
+const SENTIMENT_POS_ID = [
+    'naik', 'melonjak', 'melambung', 'untung', 'laba', 'profit', 'rekor', 'tinggi', 'kuat', 'positif', 'tumbuh', 'pertumbuhan',
+    'beli', 'akuisisi', 'ekspansi', 'dividen', 'bonus', 'surplus', 'optimis', 'bulish', 'bullish', 'investasi besar',
+    'peningkatan', 'meningkat', 'sukses', 'menang', 'kontrak baru', 'order', 'louhan', 'konsolidasi positif', 'dukungan',
+    'stimulus', 'pemulihan', 'gairah', 'akumulasi', 'rekomendasi beli', 'upgrade', 'outperform', 'overweight'
+];
+const SENTIMENT_NEG_ID = [
+    'turun', 'jatuh', 'anjlok', 'rugi', 'kerugian', 'loss', 'merosot', 'lemah', 'negatif', 'turunkan', 'merosot',
+    'gagal', 'batal', 'guguran', 'korban', 'utang', 'macet', 'krisis', 'bearish', 'berish', 'amburadul', 'pailit',
+    'pemutusan', 'phk', 'umum', 'rawan', 'risiko', 'pelanggaran', 'sanksi', 'denda', 'investigasi', 'lidang',
+    'penurunan', 'menurun', 'jeblok', 'tumble', 'cancellation', 'warning', 'ancaman', 'tertekan', 'tekanan',
+    'jual', 'panik', 'korentan', 'underperform', 'downgrade', 'sell', 'overweight turun', 'porsi turun'
+];
+const SENTIMENT_POS_EN = [
+    'surge', 'soar', 'jump', 'rise', 'gain', 'profit', 'record', 'beat', 'exceed', 'strong', 'growth', 'grow',
+    'buy', 'acquisition', 'expand', 'expansion', 'dividend', 'bonus', 'surplus', 'optimistic', 'bullish', 'upgrade',
+    'rally', 'boost', 'high', 'top', 'win', 'contract', 'deal', 'partnership', 'launch', 'approve', 'approval',
+    'outperform', 'overweight', 'accumulate', 'recommend buy', 'positive', 'recovery', 'stimulus', 'breakthrough',
+    'innovation', 'success', 'robust', 'best', 'all-time high', 'ath', 'breakout'
+];
+const SENTIMENT_NEG_EN = [
+    'fall', 'drop', 'plunge', 'crash', 'loss', 'lose', 'weak', 'decline', 'miss', 'disappointing', 'bearish',
+    'sell', 'debt', 'default', 'bankrupt', 'bankruptcy', 'lawsuit', 'fraud', 'investigation', 'probe', 'probe',
+    'downgrade', 'underperform', 'cut', 'reduce', 'lower', 'slash', 'warning', 'caution', 'risk', 'threat',
+    'pressure', 'pressured', 'concern', 'worried', 'fear', 'panic', 'halt', 'suspend', 'fraud', 'scandal',
+    'reject', 'denied', 'fail', 'failed', 'delay', 'postpone', 'cancel', 'resign', 'ceo ousted', 'layoffs',
+    'job cuts', 'recall', 'breach', 'violation', 'penalty', 'fine', 'suspended'
+];
+// Keywords makro ekonomi/politik yang memengaruhi saham
+const MACRO_KEYWORDS_US = ['fed', 'interest rate', 'rate cut', 'rate hike', 'inflation', 'cpi', 'gdp', 'recession', 'tariff', 'trade war', 'geopolitical', 'treasury', 'yield', 'employment', 'jobs report', 'consumer', ' Powell', 'treasury secretary', 'white house', 'sec ', 'china', 'europe'];
+const MACRO_KEYWORDS_ID = ['bi ', 'bank indonesia', 'suku bunga', 'inflasi', 'ihsg', 'rupiah', 'ekspor', 'impor', 'neraca perdagangan', 'pertumbuhan ekonomi', 'resesi', 'pdb', 'pemerintah', 'menteri', 'presiden', 'ppkm', 'pemilu', 'prabowo', 'jokowi', 'gidmpang', 'saham', 'emiten'];
+
+function analyzeSentiment(text) {
+    if (!text) return 0;
+    const lower = text.toLowerCase();
+    let score = 0;
+    let matches = 0;
+    SENTIMENT_POS_ID.forEach(w => { if (lower.includes(w)) { score += 1; matches++; } });
+    SENTIMENT_NEG_ID.forEach(w => { if (lower.includes(w)) { score -= 1; matches++; } });
+    SENTIMENT_POS_EN.forEach(w => { if (lower.includes(w)) { score += 1; matches++; } });
+    SENTIMENT_NEG_EN.forEach(w => { if (lower.includes(w)) { score -= 1; matches++; } });
+    // Normalize: max 3 points per article
+    return Math.max(-3, Math.min(3, score));
+}
+
+function classifySentiment(score) {
+    if (score >= 2) return 'positive';
+    if (score <= -2) return 'negative';
+    if (score === 0) return 'neutral';
+    return score > 0 ? 'positive' : 'negative';
+}
+
+function analyzeNews(stockNews, macroNews, market) {
+    const allNews = [
+        ...stockNews.map(n => ({ ...n, type: 'stock' })),
+        ...macroNews.map(n => ({ ...n, type: 'macro' }))
+    ];
+
+    if (allNews.length === 0) {
+        return { score: 0, signal: 'HOLD', reasons: ['Tidak ada berita yang bisa dianalisis'], articles: [], posCount: 0, neuCount: 0, negCount: 0, impact: 'Tidak ada berita untuk dianalisis' };
+    }
+
+    let totalScore = 0;
+    let posCount = 0, neuCount = 0, negCount = 0;
+    const articles = [];
+
+    allNews.forEach(n => {
+        const title = n.title || '';
+        const desc = n.description || (n.summary || '');
+        const text = title + ' ' + desc;
+        const score = analyzeSentiment(text);
+        const sentiment = classifySentiment(score);
+        if (sentiment === 'positive') posCount++;
+        else if (sentiment === 'negative') negCount++;
+        else neuCount++;
+        totalScore += score;
+        articles.push({ ...n, sentiment, score });
+    });
+
+    // Normalize score: average per article, scaled to -10..10
+    const avgScore = totalScore / allNews.length;
+    const normalizedScore = Math.max(-10, Math.min(10, avgScore * (10 / 3)));
+
+    // Buat reasons
+    const reasons = [];
+    if (posCount > negCount && posCount > neuCount) reasons.push(`✅ Mayoritas berita positif (${posCount} positif vs ${negCount} negatif)`);
+    else if (negCount > posCount && negCount > neuCount) reasons.push(`❌ Mayoritas berita negatif (${negCount} negatif vs ${posCount} positif)`);
+    else reasons.push(`⚪ Berita campuran (${posCount} positif, ${neuCount} netral, ${negCount} negatif)`);
+
+    // Cari top keywords yang muncul
+    const topNews = articles.filter(a => a.score !== 0).slice(0, 3);
+    topNews.forEach(a => {
+        const sign = a.score > 0 ? '✅' : '❌';
+        reasons.push(`${sign} "${a.title.substring(0, 80)}${a.title.length > 80 ? '...' : ''}"`);
+    });
+
+    // Macro impact
+    let impact = '';
+    const macroArticles = articles.filter(a => a.type === 'macro');
+    if (macroArticles.length > 0) {
+        const macroPos = macroArticles.filter(a => a.sentiment === 'positive').length;
+        const macroNeg = macroArticles.filter(a => a.sentiment === 'negative').length;
+        if (macroPos > macroNeg) impact = `Kondisi makro cenderung positif (${macroPos} berita positif vs ${macroNeg} negatif) - mendukung kenaikan harga saham.`;
+        else if (macroNeg > macroPos) impact = `Kondisi makro cenderung negatif (${macroNeg} berita negatif vs ${macroPos} positif) - tekanan pada harga saham.`;
+        else impact = `Kondisi makro netral/campuran (${macroPos} positif, ${macroNeg} negatif) - dampak terbatas.`;
+    } else {
+        impact = 'Tidak ada berita makro yang signifikan terdeteksi.';
+    }
+
+    let signal;
+    if (normalizedScore >= 3) signal = 'STRONG BUY';
+    else if (normalizedScore >= 1) signal = 'BUY';
+    else if (normalizedScore > -1) signal = 'HOLD';
+    else if (normalizedScore > -3) signal = 'SELL';
+    else signal = 'STRONG SELL';
+
+    return { score: normalizedScore, signal, reasons, articles, posCount, neuCount, negCount, impact };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  REKOMENDASI AKHIR (GABUNGAN)
+// ═══════════════════════════════════════════════════════════
+function generateFinalRecommendation(tech, fund, news) {
+    // Bobot: Teknikal 40%, Fundamental 35%, Berita 25%
+    // Skor teknikal: -10..10 -> normalize ke 0..100
+    // Skor fundamental: 0..10 -> normalize ke 0..100
+    // Skor berita: -10..10 -> normalize ke 0..100
+
+    const techNorm = tech ? ((tech.score + 10) / 20) * 100 : 50; // default 50 (neutral)
+    const fundNorm = fund ? (fund.score / 10) * 100 : 50;
+    const newsNorm = news ? ((news.score + 10) / 20) * 100 : 50;
+
+    const techWeight = tech ? 0.40 : 0;
+    const fundWeight = fund && fund.signal !== 'N/A' ? 0.35 : 0;
+    const newsWeight = news && news.articles.length > 0 ? 0.25 : 0;
+    const totalWeight = techWeight + fundWeight + newsWeight || 1;
+
+    const finalScore = (techNorm * techWeight + fundNorm * fundWeight + newsNorm * newsWeight) / totalWeight;
+
+    let signal, simpleText, icon, className, confidence;
+    if (finalScore >= 80) { signal = 'STRONG BUY'; simpleText = 'BELI SEKARANG!'; icon = '🟢'; className = 'signal-strong-buy'; confidence = 'Sangat Tinggi'; }
+    else if (finalScore >= 60) { signal = 'BUY'; simpleText = 'BOLEH BELI'; icon = '🟩'; className = 'signal-buy'; confidence = 'Tinggi'; }
+    else if (finalScore > 40) { signal = 'HOLD'; simpleText = 'TUNGGU DULU'; icon = '⚪'; className = 'signal-hold'; confidence = 'Sedang'; }
+    else if (finalScore > 20) { signal = 'SELL'; simpleText = 'JUAL / JANGAN BELI'; icon = '🟥'; className = 'signal-sell'; confidence = 'Tinggi'; }
+    else { signal = 'STRONG SELL'; simpleText = 'JUAL SEGERA!'; icon = '🔴'; className = 'signal-strong-sell'; confidence = 'Sangat Tinggi'; }
+
+    // Combine top reasons
+    const reasons = [];
+    if (tech && tech.reasons) reasons.push(...tech.reasons.slice(0, 2));
+    if (fund && fund.reasons && fund.signal !== 'N/A') reasons.push(...fund.reasons.slice(0, 2));
+    if (news && news.reasons && news.articles.length > 0) reasons.push(...news.reasons.slice(0, 1));
+
+    return { signal, simpleText, icon, className, confidence, finalScore, techNorm, fundNorm, newsNorm, reasons };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -474,83 +1604,356 @@ function updateYahooChart(candles, ind) {
     candleSeries.setData(candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })));
     volumeSeries.setData(candles.map(c => ({ time: c.time, value: c.volume, color: c.close >= c.open ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)' })));
     const mapD = (arr) => candles.map((c, i) => arr[i] !== null ? { time: c.time, value: arr[i] } : null).filter(v => v !== null);
-    ema50Series.setData(mapD(ind.ema50));
-    ema200Series.setData(mapD(ind.ema200));
-    bbUpperSeries.setData(mapD(ind.bb.upper));
-    bbLowerSeries.setData(mapD(ind.bb.lower));
+    if (ind && ind.ema50) ema50Series.setData(mapD(ind.ema50));
+    if (ind && ind.ema200) ema200Series.setData(mapD(ind.ema200));
+    if (ind && ind.bb) { bbUpperSeries.setData(mapD(ind.bb.upper)); bbLowerSeries.setData(mapD(ind.bb.lower)); }
     yahooChart.timeScale().fitContent();
 }
 
 // ═══════════════════════════════════════════════════════════
-//  UI UPDATES (AWAM)
+//  UI UPDATE: TEKNIKAL PANEL
 // ═══════════════════════════════════════════════════════════
-function updateAnalysisPanel(candles, ind, sig) {
-    const sC = document.getElementById('simpleSignalCard');
-    sC.className = `${sig.className} rounded-xl p-4 text-center transition-all duration-300`;
-    document.getElementById('simpleSignalIcon').textContent = sig.icon;
-    document.getElementById('simpleSignalText').textContent = sig.simpleText;
-    document.getElementById('simpleSignalScore').textContent = `Skor: ${sig.score}/10`;
-    
-    document.getElementById('trendSimple').textContent = sig.trendText;
-    document.getElementById('rsiSimple').textContent = sig.rsiText;
-    document.getElementById('macdSimple').textContent = sig.macdText;
-    document.getElementById('bbSimple').textContent = sig.bbText;
+function badgeClass(signal) {
+    if (!signal) return 'badge-neu';
+    if (signal.includes('STRONG BUY')) return 'badge-pos';
+    if (signal.includes('BUY')) return 'badge-pos';
+    if (signal.includes('STRONG SELL')) return 'badge-neg';
+    if (signal.includes('SELL')) return 'badge-neg';
+    return 'badge-neu';
+}
+
+function updateTechnicalPanel(tech) {
+    if (!tech) return;
+    document.getElementById('trendSimple').textContent = tech.trendText;
+    document.getElementById('rsiSimple').textContent = tech.rsiText;
+    document.getElementById('macdSimple').textContent = tech.macdText;
+    document.getElementById('bbSimple').textContent = tech.bbText;
+    document.getElementById('stochSimple').textContent = tech.stochText;
+    document.getElementById('atrSimple').textContent = tech.atrText;
+
+    const d = tech.details;
+    document.getElementById('trendDetail').textContent = (d.ema50 != null) ? `EMA50: ${d.ema50.toFixed(2)} | EMA200: ${d.ema200.toFixed(2)}` : '';
+    document.getElementById('rsiDetail').textContent = (d.rsi != null) ? `RSI: ${d.rsi.toFixed(2)}` : '';
+    document.getElementById('macdDetail').textContent = (d.macd != null) ? `MACD: ${d.macd.toFixed(3)} | Signal: ${d.macdSignal.toFixed(3)}` : '';
+    document.getElementById('bbDetail').textContent = (d.bbUpper != null) ? `Upper: ${d.bbUpper.toFixed(2)} | Lower: ${d.bbLower.toFixed(2)}` : '';
+    document.getElementById('stochDetail').textContent = (d.stochK != null) ? `%K: ${d.stochK.toFixed(1)} | %D: ${d.stochD.toFixed(1)}` : '';
+    document.getElementById('atrDetail').textContent = (d.atr != null) ? `ATR: ${d.atr.toFixed(3)} (${d.atrPct.toFixed(2)}%)` : '';
+
+    document.getElementById('techFullScore').textContent = `${tech.score.toFixed(1)} / 10`;
+    const sb = document.getElementById('techSignalBadge');
+    sb.textContent = tech.signal;
+    sb.className = `${badgeClass(tech.signal)} px-3 py-1 rounded text-xs font-semibold`;
+}
+
+function updateFundamentalPanel(fund) {
+    if (!fund) return;
+    document.getElementById('fundLoading').classList.add('hidden');
+    document.getElementById('fundContent').classList.remove('hidden');
+
+    const r = fund.ratios;
+    document.getElementById('fundCompanyName').textContent = r.companyName || '—';
+    document.getElementById('fundCompanyMeta').textContent = `Market Cap: ${fmtBig(r.marketCap)} ${r.currency || ''} | Beta: ${(r.beta != null) ? r.beta.toFixed(2) : '—'}`;
+    document.getElementById('fundCompanySector').textContent = r.sector && r.sector !== '—' ? `Sector: ${r.sector}` : '';
+
+    // Valuasi
+    const setRatio = (id, value, formatter, colorFn) => {
+        const el = document.getElementById(id);
+        el.textContent = formatter(value);
+        el.className = `text-sm font-bold ${colorFn(value)}`;
+    };
+    setRatio('fundPE', r.pe, v => v != null ? v.toFixed(2) : '—', v => ratioColor(v, 15, 40, 25));
+    setRatio('fundPB', r.pb, v => v != null ? v.toFixed(2) : '—', v => ratioColor(v, 1, 5, 3));
+    setRatio('fundEVEBITDA', r.evEbitda, v => v != null ? v.toFixed(2) : '—', v => ratioColor(v, 10, 25, 15));
+    setRatio('fundDivYield', r.divYield, v => v != null ? (v * 100).toFixed(2) + '%' : '—', v => v != null && v > 0.04 ? 'ratio-good' : (v != null && v > 0 ? 'ratio-neutral' : 'ratio-na'));
+
+    // Profitabilitas
+    setRatio('fundROE', r.roe, v => v != null ? (v * 100).toFixed(2) + '%' : '—', v => v != null ? (v > 0.15 ? 'ratio-good' : (v > 0.05 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+    setRatio('fundROA', r.roa, v => v != null ? (v * 100).toFixed(2) + '%' : '—', v => v != null ? (v > 0.05 ? 'ratio-good' : (v > 0.01 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+    setRatio('fundNPM', r.profitMargin, v => v != null ? (v * 100).toFixed(2) + '%' : '—', v => v != null ? (v > 0.1 ? 'ratio-good' : (v > 0 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+    setRatio('fundOPM', r.operatingMargin, v => v != null ? (v * 100).toFixed(2) + '%' : '—', v => v != null ? (v > 0.15 ? 'ratio-good' : (v > 0 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+
+    // Pertumbuhan
+    setRatio('fundRevGrowth', r.revGrowth, v => v != null ? (v * 100).toFixed(2) + '%' : '—', v => v != null ? (v > 0.15 ? 'ratio-good' : (v > 0 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+    setRatio('fundEarnGrowth', r.earnGrowth, v => v != null ? (v * 100).toFixed(2) + '%' : '—', v => v != null ? (v > 0.2 ? 'ratio-good' : (v > 0 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+    setRatio('fundEPS', r.eps, v => v != null ? v.toFixed(2) : '—', v => v != null ? (v > 0 ? 'ratio-good' : 'ratio-bad') : 'ratio-na');
+    setRatio('fundFCF', r.fcf, v => fmtBig(v), v => v != null ? (v > 0 ? 'ratio-good' : 'ratio-bad') : 'ratio-na');
+
+    // Kesehatan
+    setRatio('fundDER', r.der, v => v != null ? v.toFixed(2) : '—', v => v != null ? (Math.abs(v) < 0.5 ? 'ratio-good' : (Math.abs(v) < 1.5 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+    setRatio('fundCR', r.currentRatio, v => v != null ? v.toFixed(2) : '—', v => v != null ? (v > 1.5 ? 'ratio-good' : (v > 1 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+    setRatio('fundQR', r.quickRatio, v => v != null ? v.toFixed(2) : '—', v => v != null ? (v > 1 ? 'ratio-good' : (v > 0.5 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+    setRatio('fundBeta', r.beta, v => v != null ? v.toFixed(2) : '—', v => v != null ? (Math.abs(v) < 1 ? 'ratio-good' : (Math.abs(v) < 1.5 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+
+    // Reasons
+    document.getElementById('fundReasons').innerHTML = fund.reasons.map(r => `<div>${r}</div>`).join('');
+
+    // Signal badge
+    const sb = document.getElementById('fundSignalBadge');
+    sb.textContent = `${fund.signal} (${(fund.score != null ? fund.score.toFixed(1) : '0.0')}/10)`;
+    sb.className = `${badgeClass(fund.signal)} px-3 py-1.5 rounded text-sm font-semibold`;
+}
+
+function updateNewsPanel(news) {
+    if (!news) return;
+    document.getElementById('newsLoading').classList.add('hidden');
+    document.getElementById('newsContent').classList.remove('hidden');
+
+    document.getElementById('newsSentimentText').textContent = news.signal === 'STRONG BUY' ? 'Sangat Positif' :
+        news.signal === 'BUY' ? 'Positif' : news.signal === 'HOLD' ? 'Netral' :
+        news.signal === 'SELL' ? 'Negatif' : 'Sangat Negatif';
+    document.getElementById('newsSentimentDetail').textContent = `Skor sentimen: ${news.score.toFixed(2)} / 10 dari ${news.articles.length} berita`;
+    document.getElementById('newsPosCount').textContent = news.posCount;
+    document.getElementById('newsNeuCount').textContent = news.neuCount;
+    document.getElementById('newsNegCount').textContent = news.negCount;
+    document.getElementById('newsImpactText').textContent = news.impact;
+
+    const sb = document.getElementById('newsSignalBadge');
+    sb.textContent = news.signal;
+    sb.className = `${badgeClass(news.signal)} px-3 py-1.5 rounded text-sm font-semibold`;
+
+    // Stock news list
+    const stockNews = news.articles.filter(a => a.type === 'stock');
+    const macroNews = news.articles.filter(a => a.type === 'macro');
+    document.getElementById('stockNewsList').innerHTML = stockNews.length === 0 ?
+        '<p class="text-xs text-gray-600 text-center py-4">Tidak ada berita saham ditemukan</p>' :
+        stockNews.map(a => renderNewsCard(a)).join('');
+    document.getElementById('macroNewsList').innerHTML = macroNews.length === 0 ?
+        '<p class="text-xs text-gray-600 text-center py-4">Tidak ada berita makro ditemukan</p>' :
+        macroNews.map(a => renderNewsCard(a)).join('');
+}
+
+function renderNewsCard(a) {
+    const sentBadge = a.sentiment === 'positive' ?
+        '<span class="badge-pos text-[9px] px-1.5 py-0.5 rounded">POSITIF</span>' :
+        a.sentiment === 'negative' ?
+        '<span class="badge-neg text-[9px] px-1.5 py-0.5 rounded">NEGATIF</span>' :
+        '<span class="badge-neu text-[9px] px-1.5 py-0.5 rounded">NETRAL</span>';
+    const dateStr = a.published instanceof Date && !isNaN(a.published) ? a.published.toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    return `<div class="news-card bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+        <div class="flex items-start justify-between gap-2 mb-1">
+            <a href="${a.link || '#'}" target="_blank" rel="noopener" class="text-xs font-semibold text-gray-200 hover:text-blue-400 flex-1">${a.title || 'Tanpa judul'}</a>
+            ${sentBadge}
+        </div>
+        <div class="text-[10px] text-gray-500 flex items-center gap-2">
+            <span>${a.publisher || '—'}</span>
+            ${dateStr ? `<span>•</span><span>${dateStr}</span>` : ''}
+        </div>
+    </div>`;
+}
+
+function updateFinalPanel(final) {
+    if (!final) return;
+    const card = document.getElementById('finalSignalCard');
+    card.className = `${final.className} rounded-xl p-4 text-center transition-all duration-300`;
+    document.getElementById('finalSignalIcon').textContent = final.icon;
+    document.getElementById('finalSignalText').textContent = final.simpleText;
+    document.getElementById('finalSignalScore').textContent = `Skor: ${final.finalScore.toFixed(0)}/100`;
+    document.getElementById('finalSignalConfidence').textContent = `Konfidens: ${final.confidence}`;
+
+    // Sub-scores
+    document.getElementById('techScore').textContent = lastTechAnalysis ? lastTechAnalysis.score.toFixed(1) : '—';
+    const techBadge = document.getElementById('techBadge');
+    techBadge.textContent = lastTechAnalysis ? lastTechAnalysis.signal : 'N/A';
+    techBadge.className = `text-[9px] mt-0.5 ${badgeClass(lastTechAnalysis ? lastTechAnalysis.signal : null)} inline-block px-1.5 py-0.5 rounded`;
+
+    document.getElementById('fundScore').textContent = lastFundAnalysis ? (lastFundAnalysis.signal !== 'N/A' ? lastFundAnalysis.score.toFixed(1) : 'N/A') : '—';
+    const fundBadge = document.getElementById('fundBadge');
+    fundBadge.textContent = lastFundAnalysis ? lastFundAnalysis.signal : 'N/A';
+    fundBadge.className = `text-[9px] mt-0.5 ${badgeClass(lastFundAnalysis && lastFundAnalysis.signal !== 'N/A' ? lastFundAnalysis.signal : null)} inline-block px-1.5 py-0.5 rounded`;
+
+    document.getElementById('newsScore').textContent = lastNewsAnalysis ? lastNewsAnalysis.score.toFixed(1) : '—';
+    const newsBadge = document.getElementById('newsBadge');
+    newsBadge.textContent = lastNewsAnalysis ? lastNewsAnalysis.signal : 'N/A';
+    newsBadge.className = `text-[9px] mt-0.5 ${badgeClass(lastNewsAnalysis ? lastNewsAnalysis.signal : null)} inline-block px-1.5 py-0.5 rounded`;
+
+    // Reasons
+    document.getElementById('finalReasonsText').innerHTML = final.reasons.length === 0 ?
+        '<p>Tidak ada alasan tersedia.</p>' :
+        final.reasons.map(r => `<div>• ${r}</div>`).join('');
+
     document.getElementById('signalTime').textContent = new Date().toLocaleTimeString('id-ID');
 }
 
-async function loadAnalysis() {
+// ═══════════════════════════════════════════════════════════
+//  RUN FULL ANALYSIS (Teknikal + Fundamental + Berita)
+// ═══════════════════════════════════════════════════════════
+async function runFullAnalysis() {
+    if (mainAnalysisInProgress) {
+        console.log('Main analysis already in progress, skipping...');
+        return;
+    }
+    mainAnalysisInProgress = true;
     const l = document.getElementById('chartLoading');
     l.style.display = 'flex';
-    l.innerHTML = `<div class="text-center"><div class="inline-block w-8 h-8 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mb-2"></div><p class="text-xs text-gray-500">Memuat data...</p></div>`;
+    l.innerHTML = `<div class="text-center"><div class="inline-block w-8 h-8 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mb-2"></div><p class="text-xs text-gray-500">Memuat data teknikal...</p></div>`;
+
+    // Reset panels
+    document.getElementById('fundLoading').classList.remove('hidden');
+    document.getElementById('fundLoading').textContent = 'Memuat data fundamental...';
+    document.getElementById('fundContent').classList.add('hidden');
+    document.getElementById('newsLoading').classList.remove('hidden');
+    document.getElementById('newsLoading').textContent = 'Memuat berita...';
+    document.getElementById('newsContent').classList.add('hidden');
+
+    lastTechAnalysis = null; lastFundAnalysis = null; lastNewsAnalysis = null;
+
+    const range = document.getElementById('rangeSelect').value;
+
+    // === 1. TEKNIKAL ===
     try {
-        const range = document.getElementById('rangeSelect').value;
-        const { candles } = await fetchYahooData(currentYahooSymbol, '1d', range);
-        if (candles.length < 30) throw new Error('Data tidak cukup');
-        const closes = candles.map(c => c.close);
-        const ind = { ema50: calculateEMA(closes, 50), ema200: calculateEMA(closes, 200), rsi: calculateRSI(closes, 14), macd: calculateMACD(closes, 12, 26, 9), bb: calculateBB(closes, 20, 2) };
-        const sig = generateSimpleSignal(candles, ind);
-        updateYahooChart(candles, ind);
-        updateAnalysisPanel(candles, ind, sig);
+        // Use longer timeout for main analysis (more retries needed when proxies are loaded)
+        // Fallback: coba range lebih pendek kalau range asli gagal
+        let chartData = null;
+        const rangeFallbacks = [range, '6mo', '3mo'];
+        for (const r of rangeFallbacks) {
+            try {
+                chartData = await fetchYahooChartLong(currentYahooSymbol, '1d', r);
+                if (chartData.candles.length >= 30) break;
+            } catch (e) {
+                console.log(`Range ${r} gagal: ${e.message.substring(0, 50)}`);
+            }
+        }
+        if (!chartData || chartData.candles.length < 30) throw new Error('Data chart tidak cukup setelah semua fallback range');
+        const { candles, meta } = chartData;
+        lastTechAnalysis = analyzeTechnical(candles);
+        lastTechAnalysis._meta = meta;
+        updateYahooChart(candles, lastTechAnalysis.ind);
+        updateTechnicalPanel(lastTechAnalysis);
         l.style.display = 'none';
     } catch (e) {
-        l.innerHTML = `<div class="text-center"><p class="text-xs text-red-400">Gagal memuat</p><p class="text-xs text-gray-500 mt-1">${e.message}</p></div>`;
+        l.innerHTML = `<div class="text-center"><p class="text-xs text-red-400">Gagal memuat teknikal</p><p class="text-xs text-gray-500 mt-1">${e.message}</p></div>`;
+        console.error('Tech analysis error:', e);
     }
+
+    // === 2. FUNDAMENTAL (parallel with news) ===
+    const fundPromise = (async () => {
+        try {
+            if (currentMarket === 'CRYPTO') {
+                lastFundAnalysis = { score: 0, signal: 'N/A', reasons: ['Analisis fundamental tidak berlaku untuk crypto'], ratios: {} };
+            } else {
+                let qs = await fetchYahooQuoteSummary(currentYahooSymbol);
+                // Fallback: jika Yahoo quoteSummary gagal (auth issue), gunakan chart meta sebagai minimal data
+                if (!qs && lastTechAnalysis && lastTechAnalysis._meta) {
+                    const m = lastTechAnalysis._meta;
+                    qs = {
+                        _source: 'chart-meta',
+                        price: {
+                            longName: m.longName || m.shortName,
+                            shortName: m.shortName,
+                            currency: m.currency,
+                        },
+                        assetProfile: { sector: null, industry: null, website: null },
+                        summaryDetail: {
+                            fiftyTwoWeekHigh: m.fiftyTwoWeekHigh,
+                            fiftyTwoWeekLow: m.fiftyTwoWeekLow,
+                            currency: m.currency,
+                            marketCap: null,
+                        },
+                        financialData: {}, defaultKeyStatistics: {},
+                        incomeStatementHistory: { incomeStatementHistory: [] },
+                        balanceSheetHistory: { balanceSheetStatements: [] },
+                        cashflowStatementHistory: { cashflowStatements: [] },
+                    };
+                }
+                lastFundAnalysis = analyzeFundamental(qs, currentMarket);
+                if (qs && qs._source === 'chart-meta') {
+                    lastFundAnalysis.reasons.unshift('⚠️ Data fundamental terbatas - masukkan FMP API key (klik ⚙️) untuk data lengkap');
+                }
+            }
+            updateFundamentalPanel(lastFundAnalysis);
+        } catch (e) {
+            console.error('Fund analysis error:', e);
+            lastFundAnalysis = { score: 0, signal: 'N/A', reasons: ['Gagal memuat data fundamental: ' + e.message], ratios: {} };
+            updateFundamentalPanel(lastFundAnalysis);
+        }
+    })();
+
+    // === 3. BERITA (parallel) ===
+    const newsPromise = (async () => {
+        try {
+            const symbolClean = currentYahooSymbol.replace('.JK', '').replace('-USD', '');
+            const isID = currentMarket === 'IDX';
+            const companyName = lastFundAnalysis && lastFundAnalysis.ratios && lastFundAnalysis.ratios.companyName !== '—' ? lastFundAnalysis.ratios.companyName : symbolClean;
+            const macroQuery = isID ?
+                `${symbolClean} OR ${companyName} OR saham OR ekonomi OR "Bank Indonesia" OR inflasi` :
+                `${symbolClean} OR ${companyName} OR stock OR economy OR "interest rate" OR inflation OR fed`;
+
+            const [stockNews, macroNews] = await Promise.all([
+                fetchYahooNews(currentYahooSymbol, 15),
+                fetchMacroNews(macroQuery, isID ? 'id' : 'en')
+            ]);
+
+            lastNewsAnalysis = analyzeNews(stockNews, macroNews, currentMarket);
+            updateNewsPanel(lastNewsAnalysis);
+        } catch (e) {
+            console.error('News analysis error:', e);
+            lastNewsAnalysis = { score: 0, signal: 'HOLD', reasons: ['Gagal memuat berita'], articles: [], posCount: 0, neuCount: 0, negCount: 0, impact: 'Gagal memuat berita: ' + e.message };
+            updateNewsPanel(lastNewsAnalysis);
+        }
+    })();
+
+    await Promise.all([fundPromise, newsPromise]);
+
+    // === 4. FINAL RECOMMENDATION ===
+    const final = generateFinalRecommendation(lastTechAnalysis, lastFundAnalysis, lastNewsAnalysis);
+    updateFinalPanel(final);
+    mainAnalysisInProgress = false;
 }
 
 // ═══════════════════════════════════════════════════════════
-//  SCREENER LOGIC
+//  SCREENER LOGIC (Teknikal only for speed)
 // ═══════════════════════════════════════════════════════════
 async function runScreener() {
+    // Pause screener jika main analysis sedang jalan (prioritas main analysis)
+    if (mainAnalysisInProgress) {
+        console.log('Screener delayed - main analysis in progress');
+        setTimeout(runScreener, 10000);
+        return;
+    }
     const btn = document.getElementById('screenerScanBtn');
-    btn.disabled = true; 
+    btn.disabled = true;
     btn.innerHTML = `<div class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>`;
     document.getElementById('screenerCount').textContent = "Scanning...";
-    
+
     ['screenerBodyCrypto', 'screenerBodyUS', 'screenerBodyIDX'].forEach(id => {
         document.getElementById(id).innerHTML = `<tr><td colspan="2" class="text-center py-6 text-gray-500">Scanning...</td></tr>`;
     });
 
     const results = []; let cp = 0;
-    for (let i = 0; i < SCREENER_SYMBOLS.length; i += 3) {
-        const batch = SCREENER_SYMBOLS.slice(i, i + 3);
+    for (let i = 0; i < SCREENER_SYMBOLS.length; i += 2) { // batch 2 (bukan 3) untuk kurangi beban proxy
+        // Pause jika main analysis mulai
+        if (mainAnalysisInProgress) {
+            console.log('Screener paused for main analysis');
+            await new Promise(r => {
+                const check = () => mainAnalysisInProgress ? setTimeout(check, 2000) : r();
+                check();
+            });
+        }
+        const batch = SCREENER_SYMBOLS.slice(i, i + 2);
         const br = await Promise.allSettled(batch.map(async (sym) => {
             const mapped = mapSymbol(sym.market, sym.unified);
             const { candles } = await fetchYahooData(mapped.yahoo, '1d', '1y');
             if (candles.length < 30) throw new Error('Data kurang');
-            const closes = candles.map(c => c.close);
-            const ind = { ema50: calculateEMA(closes, 50), ema200: calculateEMA(closes, 200), rsi: calculateRSI(closes, 14), macd: calculateMACD(closes, 12, 26, 9), bb: calculateBB(closes, 20, 2) };
-            const sig = generateSimpleSignal(candles, ind);
+            const tech = analyzeTechnical(candles);
             cp++; document.getElementById('screenerCount').textContent = `(${cp}/${SCREENER_SYMBOLS.length})`;
-            return { unified: sym.unified, name: sym.name, market: sym.market, signal: sig };
+            return { unified: sym.unified, name: sym.name, market: sym.market, signal: tech.signal, score: tech.score, reasons: tech.reasons };
         }));
         br.forEach(r => { if (r.status === 'fulfilled') results.push(r.value); else { cp++; document.getElementById('screenerCount').textContent = `(${cp}/${SCREENER_SYMBOLS.length})`; } });
+        // Brief pause between batches
+        await new Promise(r => setTimeout(r, 1500));
     }
-    
+
     renderScreenerTables(results);
     checkForNewSignals(results);
     btn.disabled = false;
     btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Scan`;
     document.getElementById('screenerCount').textContent = `${results.length} aset`;
+}
+
+// Keep backward-compat fetchYahooData function (used by screener)
+async function fetchYahooData(symbol, interval = '1d', range = '1y') {
+    const { candles } = await fetchYahooChart(symbol, interval, range);
+    return { candles };
 }
 
 function renderScreenerTables(results) {
@@ -562,23 +1965,23 @@ function renderScreenerTables(results) {
 function renderColumn(elId, results) {
     const bd = document.getElementById(elId);
     if (results.length === 0) { bd.innerHTML = `<tr><td colspan="2" class="text-center py-6 text-gray-600">Tidak ada data</td></tr>`; return; }
-    results.sort((a, b) => b.signal.score - a.signal.score);
-    
+    results.sort((a, b) => b.score - a.score);
+
     bd.innerHTML = results.map(r => {
         const s = r.signal;
         let sB;
-        if (s.score >= 4) sB = '<span class="px-2 py-0.5 rounded bg-green-600 text-white font-bold text-[9px]">BELI</span>';
-        else if (s.score >= 2) sB = '<span class="px-2 py-0.5 rounded bg-green-700/50 text-green-400 font-semibold text-[9px]">TAHAN</span>';
-        else if (s.score > -2) sB = '<span class="px-2 py-0.5 rounded bg-gray-700 text-gray-400 text-[9px]">TUNGGU</span>';
-        else if (s.score > -4) sB = '<span class="px-2 py-0.5 rounded bg-red-700/50 text-red-400 font-semibold text-[9px]">JUAL</span>';
-        else sB = '<span class="px-2 py-0.5 rounded bg-red-600 text-white font-bold text-[9px]">JUAL!</span>';
-        
-        // Ambil alasan utama (2 pertama)
-        const reasonsHtml = s.reasons.slice(0, 2).map(r => `<span class="text-[10px] text-gray-500 block">${r}</span>`).join('');
-        
+        if (s.includes('STRONG BUY')) sB = '<span class="px-2 py-0.5 rounded bg-green-600 text-white font-bold text-[9px]">BELI!</span>';
+        else if (s.includes('BUY')) sB = '<span class="px-2 py-0.5 rounded bg-green-700/50 text-green-400 font-semibold text-[9px]">BELI</span>';
+        else if (s.includes('HOLD')) sB = '<span class="px-2 py-0.5 rounded bg-gray-700 text-gray-400 text-[9px]">TUNGGU</span>';
+        else if (s.includes('STRONG SELL')) sB = '<span class="px-2 py-0.5 rounded bg-red-600 text-white font-bold text-[9px]">JUAL!</span>';
+        else if (s.includes('SELL')) sB = '<span class="px-2 py-0.5 rounded bg-red-700/50 text-red-400 font-semibold text-[9px]">JUAL</span>';
+        else sB = '<span class="px-2 py-0.5 rounded bg-gray-700 text-gray-400 text-[9px]">N/A</span>';
+
+        const reasonsHtml = r.reasons.slice(0, 2).map(rr => `<span class="text-[10px] text-gray-500 block">${rr}</span>`).join('');
+
         return `<tr class="border-b border-gray-800/30 hover:bg-gray-800/30 cursor-pointer fade-in" onclick="loadSymbolFromScreener('${r.market}', '${r.unified}')">
             <td class="px-3 py-2">
-                <div class="font-semibold text-gray-200">${r.unified}</div>
+                <div class="font-semibold text-gray-200">${r.unified} <span class="text-[9px] text-gray-500 ml-1">(${r.score.toFixed(1)})</span></div>
                 <div class="text-[10px] text-gray-500 mb-1">${r.name}</div>
                 ${reasonsHtml}
             </td>
@@ -596,32 +1999,33 @@ function checkForNewSignals(results) {
     const t = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     results.forEach(r => {
         const mapped = mapSymbol(r.market, r.unified);
-        const k = mapped.yahoo, p = lastSignals[k], c = r.signal.signal;
+        const k = mapped.yahoo, p = lastSignals[k], c = r.signal;
         if (!p || p.signal !== c) {
             if (c.includes('BUY') || c.includes('SELL')) {
                 addSignalLog(r, t, !p ? 'NEW' : 'CHANGED');
                 if (notificationsEnabled && (!p || p.signal !== c)) sendNotification(r, c);
             }
-        } lastSignals[k] = { signal: c, score: r.signal.score };
+        } lastSignals[k] = { signal: c, score: r.score };
     });
 }
 
 function addSignalLog(r, t, ty) {
     const lg = document.getElementById('signalLog');
     if (lg.querySelector('p')) lg.innerHTML = '';
-    const s = r.signal, ib = s.signal.includes('BUY');
+    const s = r.signal, ib = s.includes('BUY');
     const bg = ib ? 'bg-green-900/20 border-green-700/30' : 'bg-red-900/20 border-red-700/30';
     const tc = ib ? 'text-green-400' : 'text-red-400';
+    const icon = s.includes('STRONG BUY') ? '🟢' : s.includes('BUY') ? '🟩' : s.includes('STRONG SELL') ? '🔴' : '🟥';
     const e = document.createElement('div');
     e.className = `${bg} border rounded-lg p-2.5 fade-in`;
-    e.innerHTML = `<div class="flex items-center justify-between mb-1"><div class="flex items-center gap-2"><span class="text-sm">${s.icon}</span><span class="font-semibold text-xs ${tc}">${s.simpleText}</span><span class="text-xs text-gray-400 font-mono">${r.unified}</span>${ty === 'NEW' ? '<span class="text-[9px] px-1 py-0.5 rounded bg-blue-900/50 text-blue-400">NEW</span>' : '<span class="text-[9px] px-1 py-0.5 rounded bg-yellow-900/50 text-yellow-400">CHANGED</span>'}</div><span class="text-[10px] text-gray-500">${t}</span></div><div class="text-[10px] text-gray-500 space-y-0.5"><div>${s.reasons.slice(0, 2).join(' • ')}</div></div>`;
+    e.innerHTML = `<div class="flex items-center justify-between mb-1"><div class="flex items-center gap-2"><span class="text-sm">${icon}</span><span class="font-semibold text-xs ${tc}">${s}</span><span class="text-xs text-gray-400 font-mono">${r.unified}</span>${ty === 'NEW' ? '<span class="text-[9px] px-1 py-0.5 rounded bg-blue-900/50 text-blue-400">NEW</span>' : '<span class="text-[9px] px-1 py-0.5 rounded bg-yellow-900/50 text-yellow-400">CHANGED</span>'}</div><span class="text-[10px] text-gray-500">${t}</span></div><div class="text-[10px] text-gray-500 space-y-0.5"><div>${r.reasons.slice(0, 2).join(' • ')}</div></div>`;
     lg.prepend(e);
     while (lg.querySelectorAll('div.border').length > 50) lg.lastChild.remove();
     playAlertSound(ib);
 }
 
 function sendNotification(r, sig) {
-    if (Notification.permission === 'granted') new Notification('🚨 Lina AI - Sinyal Baru', { body: `${r.name} (${r.unified}) → ${sig}\n${r.signal.reasons.slice(0, 2).join(' • ')}`, tag: r.unified, requireInteraction: true });
+    if (Notification.permission === 'granted') new Notification('🚨 Lina AI - Sinyal Baru', { body: `${r.name} (${r.unified}) → ${sig}\n${r.reasons.slice(0, 2).join(' • ')}`, tag: r.unified, requireInteraction: true });
 }
 
 function playAlertSound(ib) {
@@ -647,6 +2051,16 @@ window.loadSymbolFromScreener = function(market, unifiedSym) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
+// Tab navigation
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        btn.classList.add('active');
+        document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden');
+    });
+});
+
 document.getElementById('marketSelect').addEventListener('change', (e) => {
     const market = e.target.value;
     const input = document.getElementById('symbolInput');
@@ -654,7 +2068,7 @@ document.getElementById('marketSelect').addEventListener('change', (e) => {
     if (market === 'NASDAQ') input.placeholder = 'Contoh: AAPL';
     else if (market === 'IDX') input.placeholder = 'Contoh: BBCA';
     else if (market === 'CRYPTO') input.placeholder = 'Contoh: BTCUSD';
-    input.value = ''; 
+    input.value = '';
     input.focus();
     if (market === 'IDX') {
         intervalSelect.innerHTML = '<option value="D" selected>1D</option><option value="W">1W</option>';
@@ -666,7 +2080,7 @@ document.getElementById('marketSelect').addEventListener('change', (e) => {
 document.getElementById('loadChartBtn').addEventListener('click', loadFromInput);
 document.getElementById('symbolInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') loadFromInput(); });
 
-document.getElementById('rangeSelect').addEventListener('change', loadAnalysis);
+document.getElementById('rangeSelect').addEventListener('change', runFullAnalysis);
 document.getElementById('screenerScanBtn').addEventListener('click', runScreener);
 
 document.getElementById('autoScanCheck').addEventListener('change', (e) => {
@@ -692,11 +2106,59 @@ document.getElementById('notifBtn').addEventListener('click', async () => {
     }
 });
 
+// Settings modal
+document.getElementById('settingsBtn').addEventListener('click', () => {
+    const modal = document.getElementById('settingsModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.getElementById('fmpApiKeyInput').value = window.FMP_API_KEY || '';
+});
+
+document.getElementById('closeSettingsBtn').addEventListener('click', closeSettingsModal);
+document.getElementById('cancelSettingsBtn').addEventListener('click', closeSettingsModal);
+
+function closeSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+    const key = document.getElementById('fmpApiKeyInput').value.trim();
+    window.FMP_API_KEY = key;
+    try { localStorage.setItem('fmp_api_key', key); } catch (e) {}
+    document.getElementById('settingsBtn').style.background = key ? '#1e3a5f' : '';
+    closeSettingsModal();
+    if (key) {
+        alert('API key disimpan. Klik "Analisis" lagi untuk memuat data fundamental lengkap.');
+    } else {
+        alert('API key dihapus.');
+    }
+});
+
+// Close modal on backdrop click
+document.getElementById('settingsModal').addEventListener('click', (e) => {
+    if (e.target.id === 'settingsModal') closeSettingsModal();
+});
+
 // INIT
 window.addEventListener('DOMContentLoaded', () => {
+    // Load FMP API key from localStorage
+    try {
+        window.FMP_API_KEY = localStorage.getItem('fmp_api_key') || '';
+    } catch (e) { window.FMP_API_KEY = ''; }
+
+    // Update settings icon color if API key is set
+    if (window.FMP_API_KEY) {
+        document.getElementById('settingsBtn').style.background = '#1e3a5f';
+    }
+
     initYahooChart();
-    loadFromInput(); 
-    setTimeout(runScreener, 3000);
+    // Jalankan analisis utama dulu, baru screener setelah 8 detik
+    // (agar tidak berebut proxy dan menyebabkan timeout)
+    loadFromInput().then(() => {
+        setTimeout(runScreener, 8000);
+    });
 });
 </script>
 
