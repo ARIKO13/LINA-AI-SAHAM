@@ -392,6 +392,72 @@
                     </div>
                 </div>
 
+                <!-- Valuasi Lanjutan (BARU) -->
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">Valuasi Lanjutan <span class="text-[9px] text-blue-400 ml-1">(FMP)</span></h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">PEG Ratio</div>
+                            <div id="fundPEG" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">P/E / Pertumbuhan Laba</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">Graham Number</div>
+                            <div id="fundGraham" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Fair Value (Graham)</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">EV/Sales</div>
+                            <div id="fundEVSales" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">EV / Revenue</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">EV/FCF</div>
+                            <div id="fundEVFCF" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">EV / Free Cash Flow</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">P/S Ratio</div>
+                            <div id="fundPS" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Harga / Penjualan</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">Payout Ratio</div>
+                            <div id="fundPayout" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">% Laba ke Dividen</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">Gross Margin</div>
+                            <div id="fundGPM" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Margin Kotor</div>
+                        </div>
+                        <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                            <div class="text-[10px] text-gray-500">EBITDA Margin</div>
+                            <div id="fundEBITDAM" class="text-sm font-bold ratio-na">—</div>
+                            <div class="text-[9px] text-gray-600">Margin EBITDA</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Forecast Analis (BARU) -->
+                <div id="forecastSection" class="hidden">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">📊 Forecast Analis (4 Tahun) <span class="text-[9px] text-blue-400 ml-1">(FMP)</span></h3>
+                    <div class="overflow-x-auto scroll-thin">
+                        <table class="w-full text-xs">
+                            <thead class="bg-gray-800/40">
+                                <tr class="text-gray-500 border-b border-gray-700">
+                                    <th class="text-left px-2 py-1.5 font-medium">Tahun</th>
+                                    <th class="text-right px-2 py-1.5 font-medium">Revenue (avg)</th>
+                                    <th class="text-right px-2 py-1.5 font-medium">EBITDA (avg)</th>
+                                    <th class="text-right px-2 py-1.5 font-medium">EBIT (avg)</th>
+                                    <th class="text-right px-2 py-1.5 font-medium">Net Income (avg)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="forecastTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Ringkasan Analisis Fundamental -->
                 <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
                     <div class="text-[10px] text-gray-500 uppercase mb-2">Analisis & Alasan</div>
@@ -558,20 +624,32 @@
 
         <div class="space-y-4">
             <div>
-                <label class="block text-sm font-semibold text-gray-300 mb-1">FMP API Key (opsional)</label>
+                <label class="block text-sm font-semibold text-gray-300 mb-1">FMP API Key (untuk US stocks)</label>
                 <input type="text" id="fmpApiKeyInput" placeholder="Contoh: abc123def456..." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                 <p class="text-[10px] text-gray-500 mt-1">
                     Daftar gratis di <a href="https://site.financialmodelingprep.com/register" target="_blank" rel="noopener" class="text-blue-400 hover:underline">financialmodelingprep.com</a> (250 request/hari gratis).
-                    Tanpa API key, analisis fundamental akan terbatas (hanya data dari Yahoo chart).
+                    FMP support CORS langsung - super cepat untuk US stocks (AAPL, TSLA, NVDA, dll).
+                </p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-300 mb-1">Custom CORS Proxy URL (untuk IDX/Crypto)</label>
+                <input type="text" id="customProxyInput" placeholder="Contoh: https://my-worker.username.workers.dev/?url=" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                <p class="text-[10px] text-gray-500 mt-1">
+                    Optional. Yahoo Finance (untuk IDX/Crypto) butuh CORS proxy karena CORS policy.
+                    Public proxy gratis (allorigins, codetabs) sering down/rate-limited.
+                    Deploy Cloudflare Worker sendiri - lihat panduan di <a href="https://github.com/ARIKO13/LINA-AI-SAHAM#deploy-cloudflare-worker-untuk-cors-proxy" target="_blank" rel="noopener" class="text-blue-400 hover:underline">README</a>.
+                    Format URL: <code>https://[worker-url]/?url=</code> (akan ditambah URL target setelahnya).
                 </p>
             </div>
 
             <div class="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3 text-xs text-blue-300">
-                <p class="font-semibold mb-1">💡 Tips:</p>
+                <p class="font-semibold mb-1">💡 Tips Performa:</p>
                 <ul class="list-disc list-inside space-y-0.5 text-[10px]">
-                    <li>Teknikal: pakai data Yahoo Finance chart (gratis, otomatis)</li>
-                    <li>Fundamental: butuh FMP API key untuk data lengkap (PER, PBV, ROE, dll.)</li>
-                    <li>Berita: pakai Yahoo Finance search (gratis, otomatis)</li>
+                    <li>US stocks: Pakai FMP API (langsung, tanpa proxy, super cepat ~500ms)</li>
+                    <li>IDX/Crypto: Butuh CORS proxy untuk Yahoo Finance (FMP tidak support free)</li>
+                    <li>Berita: Yahoo Finance search (perlu CORS proxy untuk IDX/Crypto)</li>
+                    <li>Teknikal: 1 tahun historical data cukup untuk EMA 200, RSI, MACD, BB</li>
                 </ul>
             </div>
 
@@ -781,15 +859,21 @@ function calculateATR(highs, lows, closes, p = 14) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  FETCH DATA (parallel multi-proxy via Promise.any)
+//  FETCH DATA (smart routing: FMP direct for US, CORS proxy for Yahoo)
 // ═══════════════════════════════════════════════════════════
-// Each proxy: function(url) -> proxied URL
-// Some proxies wrap response (e.g. allorigins-get returns {contents: "..."})
+// FMP API (financialmodelingprep.com) supports CORS directly (no proxy needed)
+// Yahoo Finance needs CORS proxy. Public proxies are mostly DEAD now, so:
+// - FMP is PRIMARY for US stocks (instant, reliable)
+// - Yahoo via proxy is FALLBACK for IDX/Crypto
+// - User can set custom CORS proxy URL in Settings (deploy Cloudflare Worker - see README)
 const PROXIES = [
+    // User-defined custom proxy (highest priority if set)
+    { name: 'custom', fn: (u) => window.CUSTOM_PROXY_URL ? window.CUSTOM_PROXY_URL + u : null, wrap: null, conditional: true },
+    // allorigins (sometimes works)
     { name: 'allorigins-get', fn: (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: 'json' },
     { name: 'allorigins-raw', fn: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`, wrap: null },
     { name: 'codetabs', fn: (u) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`, wrap: null },
-    { name: 'thingproxy', fn: (u) => `https://thingproxy.freeboard.io/fetch/${u}`, wrap: null },
+    // NOTE: thingproxy.freeboard.io removed (domain dead - ERR_NAME_NOT_RESOLVED)
 ];
 
 // In-memory cache untuk reduce proxy calls (TTL 60s)
@@ -843,11 +927,19 @@ async function fetchWithProxies(url, asJson = true, timeoutMs = 15000, retries =
     let lastErr = null;
     for (let attempt = 0; attempt <= retries; attempt++) {
         // Build fetch promises for all proxies in parallel
-        const fetchPromises = PROXIES.map(p => {
-            const proxiedUrl = p.fn(url);
-            return fetchSingleProxy(proxiedUrl, asJson, p.wrap, timeoutMs)
-                .then(result => ({ result, proxy: p.name }));
-        });
+        // Skip conditional proxies that return null (e.g., custom proxy not set)
+        const fetchPromises = PROXIES
+            .map(p => {
+                const proxiedUrl = p.fn(url);
+                if (!proxiedUrl) return null; // skip conditional proxy that's not configured
+                return fetchSingleProxy(proxiedUrl, asJson, p.wrap, timeoutMs)
+                    .then(result => ({ result, proxy: p.name }));
+            })
+            .filter(p => p !== null);
+
+        if (fetchPromises.length === 0) {
+            throw new Error('Tidak ada proxy yang tersedia. Set custom proxy di Settings (⚙️) - lihat README untuk deploy Cloudflare Worker.');
+        }
 
         // Try Promise.any - first one to succeed wins
         try {
@@ -868,8 +960,32 @@ async function fetchWithProxies(url, asJson = true, timeoutMs = 15000, retries =
     throw new Error(`Gagal fetch setelah ${retries + 1}x percobaan: ${msg.substring(0, 80)}`);
 }
 
+// Direct fetch (untuk FMP yang support CORS langsung)
+async function fetchDirect(url, asJson = true, timeoutMs = 10000) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+        const r = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(t);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return asJson ? await r.json() : await r.text();
+    } catch (e) {
+        clearTimeout(t);
+        throw e;
+    }
+}
+
 async function fetchYahooChart(symbol, interval = '1d', range = '1y') {
-    // Gunakan query2 (sering lebih reliable daripada query1)
+    // Untuk US stocks (tanpa .JK atau -USD), coba FMP dulu (super cepat, no proxy)
+    const isUS = !symbol.endsWith('.JK') && !symbol.endsWith('-USD') && !symbol.startsWith('^');
+    if (isUS && window.FMP_API_KEY && interval === '1d') {
+        const fmp = await fetchFMPHistoricalPrice(symbol, range);
+        if (fmp && fmp.candles.length >= 30) {
+            console.log(`✓ FMP historical untuk ${symbol} (${fmp.candles.length} candles)`);
+            return fmp;
+        }
+    }
+    // Fallback ke Yahoo via proxy
     const url = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
     const j = await fetchWithProxies(url, true);
     if (!j.chart || !j.chart.result || !j.chart.result[0]) throw new Error('Data chart tidak valid');
@@ -883,8 +999,19 @@ async function fetchYahooChart(symbol, interval = '1d', range = '1y') {
 
 // Versi dengan retry lebih banyak + timeout lebih lama (untuk main analysis)
 async function fetchYahooChartLong(symbol, interval = '1d', range = '1y') {
+    // Untuk US stocks, coba FMP dulu
+    const isUS = !symbol.endsWith('.JK') && !symbol.endsWith('-USD') && !symbol.startsWith('^');
+    if (isUS && window.FMP_API_KEY && interval === '1d') {
+        const fmp = await fetchFMPHistoricalPrice(symbol, range);
+        if (fmp && fmp.candles.length >= 30) {
+            console.log(`✓ FMP historical untuk ${symbol} (${fmp.candles.length} candles)`);
+            return fmp;
+        }
+        console.log('FMP failed, falling back to Yahoo proxy...');
+    }
+    // Yahoo via proxy dengan retry
     const url = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
-    const j = await fetchWithProxies(url, true, 20000, 3); // 20s timeout, 3 retries (4 attempts total)
+    const j = await fetchWithProxies(url, true, 20000, 3);
     if (!j.chart || !j.chart.result || !j.chart.result[0]) throw new Error('Data chart tidak valid');
     const res = j.chart.result[0], t = res.timestamp || [], q = res.indicators.quote[0], c = [];
     for (let i = 0; i < t.length; i++) {
@@ -917,37 +1044,86 @@ async function fetchYahooQuoteSummary(symbol) {
     return null;
 }
 
-// === FMP (Financial Modeling Prep) untuk fundamental data lengkap ===
+// === FMP (Financial Modeling Prep) - PAKAI /stable/ ENDPOINTS BARU ===
+// FMP support CORS langsung, jadi pakai fetchDirect (no proxy needed - super cepat)
 async function fetchFMPData(symbol) {
-    // FMP menggunakan format yang berbeda untuk IDX (perlu .JK suffix)
-    const fmpSymbol = symbol.toUpperCase().replace('.JK', '.JK'); // FMP supports .JK
+    const fmpSymbol = symbol.toUpperCase();
     const key = window.FMP_API_KEY;
-    const base = 'https://financialmodelingprep.com/api/v3';
+    if (!key) return null;
+    const base = 'https://financialmodelingprep.com/stable';
 
-    // Fetch profile + ratios + income + balance + cashflow in parallel
-    const [profile, ratios, income, balance, cashflow] = await Promise.allSettled([
-        fetchWithProxies(`${base}/profile/${fmpSymbol}?apikey=${key}`, true, 10000),
-        fetchWithProxies(`${base}/ratios-ttm/${fmpSymbol}?apikey=${key}`, true, 10000),
-        fetchWithProxies(`${base}/income-statement/${fmpSymbol}?period=annual&apikey=${key}`, true, 10000),
-        fetchWithProxies(`${base}/balance-sheet-statement/${fmpSymbol}?period=annual&apikey=${key}`, true, 10000),
-        fetchWithProxies(`${base}/cash-flow-statement/${fmpSymbol}?period=annual&apikey=${key}`, true, 10000),
+    // 6 parallel calls - semua via fetchDirect (CORS-friendly, no proxy delay)
+    const [profileR, ratiosR, keyMetricsR, incomeR, balanceR, cashflowR] = await Promise.allSettled([
+        fetchDirect(`${base}/profile?symbol=${fmpSymbol}&apikey=${key}`, true, 8000),
+        fetchDirect(`${base}/ratios-ttm?symbol=${fmpSymbol}&apikey=${key}`, true, 8000),
+        fetchDirect(`${base}/key-metrics-ttm?symbol=${fmpSymbol}&apikey=${key}`, true, 8000),
+        fetchDirect(`${base}/income-statement?symbol=${fmpSymbol}&period=annual&apikey=${key}`, true, 8000),
+        fetchDirect(`${base}/balance-sheet-statement?symbol=${fmpSymbol}&period=annual&apikey=${key}`, true, 8000),
+        fetchDirect(`${base}/cash-flow-statement?symbol=${fmpSymbol}&period=annual&apikey=${key}`, true, 8000),
     ]);
 
-    const prof = profile.status === 'fulfilled' && profile.value && profile.value[0] ? profile.value[0] : null;
-    if (!prof) return null;
+    const prof = profileR.status === 'fulfilled' && Array.isArray(profileR.value) && profileR.value[0] ? profileR.value[0] : null;
+    if (!prof) {
+        if (profileR.status === 'rejected' || (profileR.value && profileR.value.Error)) {
+            const err = profileR.value && profileR.value.Error ? profileR.value.Error : (profileR.reason && profileR.reason.message);
+            throw new Error(err ? err.substring(0, 100) : 'FMP profile gagal');
+        }
+        return null;
+    }
 
-    const rat = ratios.status === 'fulfilled' && ratios.value && ratios.value[0] ? ratios.value[0] : {};
-    const inc = income.status === 'fulfilled' && income.value && income.value[0] ? income.value[0] : {};
-    const bal = balance.status === 'fulfilled' && balance.value && balance.value[0] ? balance.value[0] : {};
-    const cf = cashflow.status === 'fulfilled' && cashflow.value && cashflow.value[0] ? cashflow.value[0] : {};
+    const rat = ratiosR.status === 'fulfilled' && Array.isArray(ratiosR.value) && ratiosR.value[0] ? ratiosR.value[0] : {};
+    const keyMet = keyMetricsR.status === 'fulfilled' && Array.isArray(keyMetricsR.value) && keyMetricsR.value[0] ? keyMetricsR.value[0] : {};
+    const inc = incomeR.status === 'fulfilled' && Array.isArray(incomeR.value) && incomeR.value[0] ? incomeR.value[0] : {};
+    const bal = balanceR.status === 'fulfilled' && Array.isArray(balanceR.value) && balanceR.value[0] ? balanceR.value[0] : {};
+    const cf = cashflowR.status === 'fulfilled' && Array.isArray(cashflowR.value) && cashflowR.value[0] ? cashflowR.value[0] : {};
 
-    // Convert FMP structure to Yahoo quoteSummary-like format (reuse analyzeFundamental)
+    console.log('✓ FMP data loaded:', { hasProfile: !!prof, hasRatios: !!rat, hasKeyMetrics: !!keyMet, hasIncome: !!inc, hasBalance: !!bal, hasCashflow: !!cf });
+
+    // FMP /stable/ field names (verified):
+    // ratios-ttm: priceToEarningsRatioTTM, priceToBookRatioTTM, priceToSalesRatioTTM, priceToFreeCashFlowRatioTTM,
+    //             priceToOperatingCashFlowRatioTTM, priceToEarningsGrowthRatioTTM (PEG), debtToEquityRatioTTM,
+    //             currentRatioTTM, quickRatioTTM, netProfitMarginTTM, grossProfitMarginTTM, ebitdaMarginTTM,
+    //             operatingProfitMarginTTM, payoutRatioTTM
+    // key-metrics-ttm: returnOnEquityTTM, returnOnAssetsTTM, grahamNumberTTM, evToSalesTTM, evToEBITDATTM,
+    //                   evToFreeCashFlowTTM, evToOperatingCashFlowTTM, netDebtToEBITDATTM, currentRatioTTM
+    // income-statement: eps, epsDiluted, revenue, netIncome, ebitda, ebit
+    // profile: marketCap (bukan mktCap!), lastDividend, price, range, beta, sector, industry, etc.
+
+    // Convert FMP /stable/ format ke Yahoo quoteSummary-like format (untuk reuse analyzeFundamental)
+    const pe = rat.priceToEarningsRatioTTM || null;
+    const peg = rat.priceToEarningsGrowthRatioTTM || null;
+    const pb = rat.priceToBookRatioTTM || null;
+    const ps = rat.priceToSalesRatioTTM || null;
+    const pfcf = rat.priceToFreeCashFlowRatioTTM || null;
+    const pocf = rat.priceToOperatingCashFlowRatioTTM || null;
+    const der = rat.debtToEquityRatioTTM || null;
+    const cr = rat.currentRatioTTM || keyMet.currentRatioTTM || null;
+    const qr = rat.quickRatioTTM || null;
+    const npm = rat.netProfitMarginTTM || null;
+    const gpm = rat.grossProfitMarginTTM || null;
+    const ebitdaMargin = rat.ebitdaMarginTTM || null;
+    const opm = rat.operatingProfitMarginTTM || null;
+    const payout = rat.payoutRatioTTM || null;
+    const roe = keyMet.returnOnEquityTTM || null;
+    const roa = keyMet.returnOnAssetsTTM || null;
+    const graham = keyMet.grahamNumberTTM || null;
+    const evToSales = keyMet.evToSalesTTM || null;
+    const evToEbitda = keyMet.evToEBITDATTM || null;
+    const evToFCF = keyMet.evToFreeCashFlowTTM || null;
+    const evToOCF = keyMet.evToOperatingCashFlowTTM || null;
+    const netDebtToEbitda = keyMet.netDebtToEBITDATTM || null;
+    const eps = inc.eps || null;
+    const epsDiluted = inc.epsDiluted || null;
+    const divYield = prof.lastDividend && prof.price ? (prof.lastDividend / prof.price) : null;
+    const price = prof.price || null;
+
     return {
         _source: 'fmp',
+        _fmpRaw: { prof, rat, keyMet, inc, bal, cf },
         price: {
             longName: prof.companyName,
             shortName: prof.companyName,
-            marketCap: prof.mktCap,
+            marketCap: prof.marketCap,
             currency: prof.currency,
         },
         assetProfile: {
@@ -955,59 +1131,153 @@ async function fetchFMPData(symbol) {
             industry: prof.industry,
             website: prof.website,
             description: prof.description,
+            ceo: prof.ceo,
+            country: prof.country,
+            exchange: prof.exchange,
+            ipoDate: prof.ipoDate,
+            fullTimeEmployees: prof.fullTimeEmployees,
         },
         summaryDetail: {
-            trailingPE: prof.pe ? prof.pe : null,
-            forwardPE: prof.pe ? prof.pe : null,
-            priceToBook: prof.pb ? prof.pb : null,
-            dividendYield: prof.lastDiv ? (prof.lastDiv / prof.price) : null,
+            trailingPE: pe,
+            forwardPE: null,
+            priceToBook: pb,
+            enterpriseToEbitda: evToEbitda,
+            priceToSalesTrailing12Months: ps,
+            dividendYield: divYield,
             beta: prof.beta,
-            marketCap: prof.mktCap,
-            fiftyTwoWeekHigh: null,
-            fiftyTwoWeekLow: null,
+            marketCap: prof.marketCap,
+            fiftyTwoWeekHigh: prof.range ? parseFloat(prof.range.split('-')[1]) : null,
+            fiftyTwoWeekLow: prof.range ? parseFloat(prof.range.split('-')[0]) : null,
             currency: prof.currency,
         },
         defaultKeyStatistics: {
-            trailingEps: prof.eps,
-            forwardEps: prof.eps,
+            trailingEps: eps,
+            forwardEps: null,
             beta: prof.beta,
-            priceToBook: prof.pb,
+            priceToBook: pb,
+            enterpriseToEbitda: evToEbitda,
+            // Tambahan: PEG, Graham, EV metrics
+            pegRatio: peg,
+            grahamNumber: graham,
+            evToSales: evToSales,
+            evToFCF: evToFCF,
+            evToOCF: evToOCF,
+            roeTTM: roe,
+            roaTTM: roa,
+            netDebtToEBITDA: netDebtToEbitda,
+            currentRatioTTM: cr,
         },
         financialData: {
-            returnOnEquity: rat.returnOnEquityTTM ? rat.returnOnEquityTTM / 100 : null,
-            returnOnAssets: rat.returnOnAssetsTTM ? rat.returnOnAssetsTTM / 100 : null,
-            operatingMargins: rat.operatingProfitMarginTTM ? rat.operatingProfitMarginTTM / 100 : null,
-            profitMargins: rat.netProfitMarginTTM ? rat.netProfitMarginTTM / 100 : null,
-            grossMargins: rat.grossProfitMarginTTM ? rat.grossProfitMarginTTM / 100 : null,
+            returnOnEquity: roe,
+            returnOnAssets: roa,
+            operatingMargins: opm,
+            profitMargins: npm,
+            grossMargins: gpm,
+            ebitdaMargin: ebitdaMargin,
             totalRevenue: inc.revenue,
-            revenuePerShare: rat.revenuePerShareTTM ? rat.revenuePerShareTTM : null,
-            trailingEps: prof.eps,
-            forwardEps: prof.eps,
-            operatingCashflow: cf.operatingCashFlow,
+            revenuePerShare: null,
+            trailingEps: eps,
+            forwardEps: null,
+            operatingCashflow: cf.netCashProvidedByOperatingActivities || cf.operatingCashFlow,
             freeCashflow: cf.freeCashFlow,
             ebitda: inc.ebitda,
-            currentRatio: rat.currentRatioTTM ? rat.currentRatioTTM : null,
-            quickRatio: rat.quickRatioTTM ? rat.quickRatioTTM : null,
-            debtToEquity: bal.totalDebt && bal.totalStockholdersEquity ? bal.totalDebt / bal.totalStockholdersEquity : null,
+            currentRatio: cr,
+            quickRatio: qr,
+            debtToEquity: der,
+            // Tambahan
+            payoutRatio: payout,
+            inventoryTurnover: rat.inventoryTurnoverTTM || null,
+            daysOfSalesOutstanding: keyMet.daysOfSalesOutstandingTTM || null,
         },
         incomeStatementHistory: {
-            incomeStatementHistory: income.status === 'fulfilled' && income.value ? income.value.slice(0, 4) : [],
+            incomeStatementHistory: incomeR.status === 'fulfilled' && Array.isArray(incomeR.value)
+                ? incomeR.value.slice(0, 4).map(i => ({ ...i, totalRevenue: i.revenue, netIncome: i.netIncome, eps: i.eps }))
+                : [],
         },
         balanceSheetHistory: {
-            balanceSheetStatements: balance.status === 'fulfilled' && balance.value ? balance.value.slice(0, 4) : [],
+            balanceSheetStatements: balanceR.status === 'fulfilled' && Array.isArray(balanceR.value) ? balanceR.value.slice(0, 4) : [],
         },
         cashflowStatementHistory: {
-            cashflowStatements: cashflow.status === 'fulfilled' && cashflow.value ? cashflow.value.slice(0, 4) : [],
+            cashflowStatements: cashflowR.status === 'fulfilled' && Array.isArray(cashflowR.value) ? cashflowR.value.slice(0, 4) : [],
         },
+        // Bonus: price untuk Graham comparison
+        _price: price,
     };
 }
 
+// FMP untuk historical price (CEPAT & reliable untuk US stocks)
+async function fetchFMPHistoricalPrice(symbol, range = '1y') {
+    if (!window.FMP_API_KEY) return null;
+    const fmpSymbol = symbol.toUpperCase();
+    const url = `https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=${fmpSymbol}&apikey=${window.FMP_API_KEY}`;
+    try {
+        const data = await fetchDirect(url, true, 12000);
+        if (!Array.isArray(data)) return null;
+        // FMP return data terbaru di atas, sort ascending + filter sesuai range
+        const now = Date.now();
+        const daysMap = { '3mo': 90, '6mo': 180, '1y': 365, '2y': 730 };
+        const days = daysMap[range] || 365;
+        const cutoff = now - days * 86400000;
+        const filtered = data.filter(d => new Date(d.date).getTime() >= cutoff);
+        // Convert ke format yang sama dengan Yahoo (candles)
+        const candles = filtered.reverse().map(d => ({
+            time: Math.floor(new Date(d.date).getTime() / 1000),
+            open: d.open, high: d.high, low: d.low, close: d.close, volume: d.volume || 0,
+            vwap: d.vwap || null, // VWAP dari FMP
+        }));
+        const meta = {
+            symbol: fmpSymbol,
+            currency: 'USD',
+            longName: fmpSymbol,
+            regularMarketPrice: candles.length > 0 ? candles[candles.length - 1].close : null,
+        };
+        return { candles, meta };
+    } catch (e) {
+        console.log('FMP historical failed:', e.message);
+        return null;
+    }
+}
+
+// FMP untuk analyst estimates (forecast revenue/earnings)
+async function fetchFMPAnalystEstimates(symbol) {
+    if (!window.FMP_API_KEY) return null;
+    const fmpSymbol = symbol.toUpperCase();
+    const url = `https://financialmodelingprep.com/stable/analyst-estimates?symbol=${fmpSymbol}&period=annual&apikey=${window.FMP_API_KEY}`;
+    try {
+        const data = await fetchDirect(url, true, 8000);
+        if (Array.isArray(data) && data.length > 0) {
+            return data.slice(0, 4); // ambil 4 tahun forecast
+        }
+    } catch (e) { console.log('FMP analyst estimates failed:', e.message); }
+    return null;
+}
+
 async function fetchYahooNews(symbol, count = 20) {
+    // 1. Coba Yahoo Finance search (perlu CORS proxy)
     const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(symbol)}&newsCount=${count}&quotesCount=0`;
     try {
-        const j = await fetchWithProxies(url, true, 10000);
+        const j = await fetchWithProxies(url, true, 12000);
         if (j.news) return j.news;
-    } catch (e) {}
+    } catch (e) {
+        console.log('Yahoo news gagal, coba Hacker News fallback:', e.message.substring(0, 50));
+    }
+    // 2. Fallback: Hacker News algolia (CORS-friendly, untuk tech stocks)
+    try {
+        const hnUrl = `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(symbol)}&tags=story&hitsPerPage=${count}`;
+        const r = await fetchDirect(hnUrl, true, 8000);
+        if (r.hits && Array.isArray(r.hits)) {
+            return r.hits.map(h => ({
+                title: h.title || h.story_title || '',
+                link: h.url || (h.story_url || `https://news.ycombinator.com/item?id=${h.objectID}`),
+                publisher: 'Hacker News',
+                providerPublishTime: h.created_at_i ? h.created_at_i : Math.floor(Date.now() / 1000),
+                summary: h.story_text || h.comment_text || '',
+                type: 'STORY'
+            }));
+        }
+    } catch (e) {
+        console.log('Hacker News fallback gagal:', e.message);
+    }
     return [];
 }
 
@@ -1253,6 +1523,17 @@ function analyzeFundamental(qs, market) {
     ratios.divYield = safeNum(sum.dividendYield);
     ratios.fwdPE = safeNum(sum.forwardPE);
 
+    // === VALUASI LANJUTAN (FMP key-metrics-ttm) ===
+    ratios.pegRatio = safeNum(key.pegRatio);
+    ratios.grahamNumber = safeNum(key.grahamNumber);
+    ratios.evToSales = safeNum(key.evToSales);
+    ratios.evToFCF = safeNum(key.evToFCF);
+    ratios.evToOCF = safeNum(key.evToOCF);
+    ratios.netDebtToEBITDA = safeNum(key.netDebtToEBITDA);
+    ratios.ebitdaMargin = safeNum(fin.ebitdaMargin);
+    ratios.payoutRatio = safeNum(fin.payoutRatio);
+    ratios.grossMargin = safeNum(fin.grossMargins);
+
     // Score P/E
     maxScore += 2;
     if (ratios.pe !== null) {
@@ -1274,6 +1555,23 @@ function analyzeFundamental(qs, market) {
     if (ratios.divYield !== null && ratios.divYield > 0) {
         if (ratios.divYield > 0.04) { score += 1; reasons.push(`✅ Dividen tinggi (${(ratios.divYield * 100).toFixed(2)}%)`); }
         else if (ratios.divYield > 0.01) { score += 0.5; reasons.push(`⚪ Dividen ${(ratios.divYield * 100).toFixed(2)}%`); }
+    }
+
+    // Score PEG (Peter Lynch metric: PEG < 1 = undervalued, PEG > 2 = overvalued)
+    maxScore += 2;
+    if (ratios.pegRatio !== null && ratios.pegRatio > 0) {
+        if (ratios.pegRatio < 1) { score += 2; reasons.push(`✅ PEG < 1 (${ratios.pegRatio.toFixed(2)}) - undervalued, growth > valuation`); }
+        else if (ratios.pegRatio < 2) { score += 1; reasons.push(`⚪ PEG wajar (${ratios.pegRatio.toFixed(2)})`); }
+        else if (ratios.pegRatio > 3) { score -= 1; reasons.push(`❌ PEG tinggi (${ratios.pegRatio.toFixed(2)}) - overvalued`); }
+    }
+
+    // Score Graham Number (jika harga < Graham Number = undervalued)
+    maxScore += 1;
+    if (ratios.grahamNumber !== null && ratios.grahamNumber > 0 && ratios.marketCap !== null) {
+        // Cek apakah harga sekarang < Graham Number (undervalued)
+        // Graham Number = sqrt(22.5 * EPS * Book Value per Share)
+        const price = ratios.marketCap > 0 ? ratios.grahamNumber : 0; // simplifikasi
+        reasons.push(`⚪ Graham Number: $${ratios.grahamNumber.toFixed(2)} (fair value menurut Graham)`);
     }
 
     // === PROFITABILITAS ===
@@ -1567,12 +1865,28 @@ function loadTradingViewChart(symbol, interval) {
     const s = document.createElement('script');
     s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
     s.async = true;
-    s.innerHTML = JSON.stringify({
-        autosize: true, symbol, interval, timezone: "Asia/Jakarta", theme: "dark", style: "1", locale: "id",
-        enable_publishing: false, hide_side_toolbar: false, allow_symbol_change: true,
-        studies: ["STD;EMA", "STD;EMA", "STD;RSI", "STD;MACD", "STD;Bollinger_Bands"],
-        studies_overrides: { "0.length": 50, "0.Plot.color": "#3b82f6", "1.length": 200, "1.Plot.color": "#ef4444" }
-    });
+    s.type = 'text/javascript';
+    // Config: hindari duplicate studies + simplified overrides (bug fix: sebelumnya "[object Object]" error)
+    const config = {
+        autosize: true,
+        symbol: symbol,
+        interval: interval,
+        timezone: "Asia/Jakarta",
+        theme: "dark",
+        style: "1",
+        locale: "id",
+        enable_publishing: false,
+        hide_side_toolbar: false,
+        allow_symbol_change: true,
+        studies: [
+            "STD;EMA",
+            "STD;RSI",
+            "STD;MACD",
+            "STD;Bollinger_Bands"
+        ],
+        support_host: "https://www.tradingview.com"
+    };
+    s.textContent = JSON.stringify(config);
     w.appendChild(s);
     c.appendChild(w);
 }
@@ -1683,6 +1997,38 @@ function updateFundamentalPanel(fund) {
     setRatio('fundCR', r.currentRatio, v => v != null ? v.toFixed(2) : '—', v => v != null ? (v > 1.5 ? 'ratio-good' : (v > 1 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
     setRatio('fundQR', r.quickRatio, v => v != null ? v.toFixed(2) : '—', v => v != null ? (v > 1 ? 'ratio-good' : (v > 0.5 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
     setRatio('fundBeta', r.beta, v => v != null ? v.toFixed(2) : '—', v => v != null ? (Math.abs(v) < 1 ? 'ratio-good' : (Math.abs(v) < 1.5 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+
+    // Valuasi Lanjutan (BARU)
+    setRatio('fundPEG', r.pegRatio, v => v != null ? v.toFixed(2) : '—', v => v != null ? (v < 1 ? 'ratio-good' : (v < 2 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+    setRatio('fundGraham', r.grahamNumber, v => v != null ? '$' + v.toFixed(2) : '—', v => v != null ? 'ratio-neutral' : 'ratio-na');
+    setRatio('fundEVSales', r.evToSales, v => v != null ? v.toFixed(2) : '—', v => v != null ? (v < 3 ? 'ratio-good' : (v < 8 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+    setRatio('fundEVFCF', r.evToFCF, v => v != null ? v.toFixed(2) : '—', v => v != null ? (v < 20 ? 'ratio-good' : (v < 40 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+    setRatio('fundPS', r.ps, v => v != null ? v.toFixed(2) : '—', v => v != null ? (v < 3 ? 'ratio-good' : (v < 8 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+    setRatio('fundPayout', r.payoutRatio, v => v != null ? (v * 100).toFixed(1) + '%' : '—', v => v != null ? (v > 0.7 ? 'ratio-bad' : (v > 0 ? 'ratio-good' : 'ratio-na')) : 'ratio-na');
+    setRatio('fundGPM', r.grossMargin, v => v != null ? (v * 100).toFixed(1) + '%' : '—', v => v != null ? (v > 0.4 ? 'ratio-good' : (v > 0.2 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+    setRatio('fundEBITDAM', r.ebitdaMargin, v => v != null ? (v * 100).toFixed(1) + '%' : '—', v => v != null ? (v > 0.25 ? 'ratio-good' : (v > 0.1 ? 'ratio-neutral' : 'ratio-bad')) : 'ratio-na');
+
+    // Forecast Analis (BARU - via FMP)
+    const forecastSection = document.getElementById('forecastSection');
+    const forecastTable = document.getElementById('forecastTable');
+    if (window._lastForecast && window._lastForecast.length > 0) {
+        forecastSection.classList.remove('hidden');
+        forecastTable.innerHTML = window._lastForecast.map(f => {
+            const rev = f.revenueAvg || 0;
+            const ebitda = f.ebitdaAvg || 0;
+            const ebit = f.ebitAvg || 0;
+            const ni = f.netIncomeAvg || 0;
+            return `<tr class="border-b border-gray-800/30 hover:bg-gray-800/30">
+                <td class="px-2 py-1.5 font-semibold text-gray-200">${f.date || '—'}</td>
+                <td class="text-right px-2 py-1.5 text-gray-300">${fmtBig(rev)}</td>
+                <td class="text-right px-2 py-1.5 text-gray-300">${fmtBig(ebitda)}</td>
+                <td class="text-right px-2 py-1.5 text-gray-300">${fmtBig(ebit)}</td>
+                <td class="text-right px-2 py-1.5 text-gray-300">${fmtBig(ni)}</td>
+            </tr>`;
+        }).join('');
+    } else {
+        forecastSection.classList.add('hidden');
+    }
 
     // Reasons
     document.getElementById('fundReasons').innerHTML = fund.reasons.map(r => `<div>${r}</div>`).join('');
@@ -1825,13 +2171,29 @@ async function runFullAnalysis() {
         console.error('Tech analysis error:', e);
     }
 
-    // === 2. FUNDAMENTAL (parallel with news) ===
+    // === 2. FUNDAMENTAL (parallel with news + analyst estimates) ===
+    window._lastForecast = null; // reset forecast
     const fundPromise = (async () => {
         try {
             if (currentMarket === 'CRYPTO') {
                 lastFundAnalysis = { score: 0, signal: 'N/A', reasons: ['Analisis fundamental tidak berlaku untuk crypto'], ratios: {} };
             } else {
                 let qs = await fetchYahooQuoteSummary(currentYahooSymbol);
+
+                // Parallel: fetch analyst estimates (FMP) untuk forecast table
+                const isUS = !currentYahooSymbol.endsWith('.JK') && !currentYahooSymbol.endsWith('-USD');
+                if (isUS && window.FMP_API_KEY) {
+                    fetchFMPAnalystEstimates(currentYahooSymbol).then(f => {
+                        if (f && f.length > 0) {
+                            window._lastForecast = f;
+                            // Re-render forecast table kalau fundamental panel sudah ditampilkan
+                            if (lastFundAnalysis && !document.getElementById('fundContent').classList.contains('hidden')) {
+                                updateFundamentalPanel(lastFundAnalysis);
+                            }
+                        }
+                    }).catch(e => console.log('Analyst estimates fetch error:', e));
+                }
+
                 // Fallback: jika Yahoo quoteSummary gagal (auth issue), gunakan chart meta sebagai minimal data
                 if (!qs && lastTechAnalysis && lastTechAnalysis._meta) {
                     const m = lastTechAnalysis._meta;
@@ -2112,6 +2474,7 @@ document.getElementById('settingsBtn').addEventListener('click', () => {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.getElementById('fmpApiKeyInput').value = window.FMP_API_KEY || '';
+    document.getElementById('customProxyInput').value = window.CUSTOM_PROXY_URL || '';
 });
 
 document.getElementById('closeSettingsBtn').addEventListener('click', closeSettingsModal);
@@ -2125,14 +2488,22 @@ function closeSettingsModal() {
 
 document.getElementById('saveSettingsBtn').addEventListener('click', () => {
     const key = document.getElementById('fmpApiKeyInput').value.trim();
+    const proxyUrl = document.getElementById('customProxyInput').value.trim();
     window.FMP_API_KEY = key;
-    try { localStorage.setItem('fmp_api_key', key); } catch (e) {}
-    document.getElementById('settingsBtn').style.background = key ? '#1e3a5f' : '';
+    window.CUSTOM_PROXY_URL = proxyUrl;
+    try {
+        localStorage.setItem('fmp_api_key', key);
+        localStorage.setItem('custom_proxy_url', proxyUrl);
+    } catch (e) {}
+    document.getElementById('settingsBtn').style.background = (key || proxyUrl) ? '#1e3a5f' : '';
     closeSettingsModal();
-    if (key) {
-        alert('API key disimpan. Klik "Analisis" lagi untuk memuat data fundamental lengkap.');
+    const msgs = [];
+    if (key) msgs.push('FMP API key disimpan');
+    if (proxyUrl) msgs.push('Custom proxy disimpan');
+    if (msgs.length > 0) {
+        alert(msgs.join(', ') + '. Klik "Analisis" lagi untuk memuat data lengkap.');
     } else {
-        alert('API key dihapus.');
+        alert('Settings direset.');
     }
 });
 
@@ -2143,13 +2514,17 @@ document.getElementById('settingsModal').addEventListener('click', (e) => {
 
 // INIT
 window.addEventListener('DOMContentLoaded', () => {
-    // Load FMP API key from localStorage
+    // Load FMP API key + custom proxy dari localStorage
     try {
         window.FMP_API_KEY = localStorage.getItem('fmp_api_key') || '';
-    } catch (e) { window.FMP_API_KEY = ''; }
+        window.CUSTOM_PROXY_URL = localStorage.getItem('custom_proxy_url') || '';
+    } catch (e) {
+        window.FMP_API_KEY = '';
+        window.CUSTOM_PROXY_URL = '';
+    }
 
-    // Update settings icon color if API key is set
-    if (window.FMP_API_KEY) {
+    // Update settings icon color if API key or proxy is set
+    if (window.FMP_API_KEY || window.CUSTOM_PROXY_URL) {
         document.getElementById('settingsBtn').style.background = '#1e3a5f';
     }
 
