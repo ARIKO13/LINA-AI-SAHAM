@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lina AI - Analisis Saham (Teknikal + Fundamental + Berita)</title>
+    <!-- Version stamp untuk debugging - cek apakah browser pakai versi terbaru -->
+    <meta name="version" content="v5-2026-10-20">
+    <meta name="description" content="Lina AI - Analisis Saham: Teknikal + Fundamental + Berita (v5)">
+    <title>Lina AI v5 - Analisis Saham (Teknikal + Fundamental + Berita)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -945,7 +948,11 @@ async function fetchSingleProxy(proxiedUrl, asJson, wrap, timeoutMs) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-        const r = await fetch(proxiedUrl, { signal: ctrl.signal, headers: { 'Accept': '*/*' } });
+        const r = await fetch(proxiedUrl, {
+            signal: ctrl.signal,
+            cache: 'no-store', // bypass HTTP cache - penting saat ganti symbol
+            headers: { 'Accept': '*/*' }
+        });
         clearTimeout(t);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         if (asJson) {
@@ -1016,11 +1023,18 @@ async function fetchWithProxies(url, asJson = true, timeoutMs = 15000, retries =
 }
 
 // Direct fetch (untuk FMP yang support CORS langsung)
+// Tambah cache-busting (_t timestamp) untuk hindari HTTP cache di browser
 async function fetchDirect(url, asJson = true, timeoutMs = 10000) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-        const r = await fetch(url, { signal: ctrl.signal });
+        // Tambah cache-busting parameter (_t) supaya browser tidak cache response
+        const cacheBust = (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+        const r = await fetch(url + cacheBust, {
+            signal: ctrl.signal,
+            cache: 'no-store', // penting: bypass HTTP cache
+            headers: { 'Accept': 'application/json' }
+        });
         clearTimeout(t);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return asJson ? await r.json() : await r.text();
@@ -2145,6 +2159,8 @@ function updateTechnicalPanel(tech) {
 
 function updateFundamentalPanel(fund) {
     if (!fund) return;
+    // Debug log untuk verifikasi symbol yang sedang di-render
+    console.log(`📊 updateFundamentalPanel: symbol=${currentYahooSymbol} | companyName=${fund.ratios?.companyName} | signal=${fund.signal} | score=${fund.score?.toFixed(1)}`);
     document.getElementById('fundLoading').classList.add('hidden');
     document.getElementById('fundContent').classList.remove('hidden');
 
@@ -2418,7 +2434,12 @@ async function runFullAnalysis() {
         return;
     }
     mainAnalysisInProgress = true;
+    // Simpan symbol yang sedang dianalisis untuk deteksi race condition
+    const analysisSymbol = currentYahooSymbol;
+    const analysisMarket = currentMarket;
     const l = document.getElementById('chartLoading');
+
+    console.log(`🔍 runFullAnalysis START for symbol=${analysisSymbol} market=${analysisMarket}`);
 
     // ===== RESET SEMUA STATE GLOBAL supaya tidak ada stale data dari analisis sebelumnya =====
     lastTechAnalysis = null; lastFundAnalysis = null; lastNewsAnalysis = null;
@@ -2439,16 +2460,25 @@ async function runFullAnalysis() {
     resetTechnicalPanelUI();
 
     l.style.display = 'flex';
-    l.innerHTML = `<div class="text-center"><div class="inline-block w-8 h-8 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mb-2"></div><p class="text-xs text-gray-500">Memuat data ${currentYahooSymbol}...</p></div>`;
+    l.innerHTML = `<div class="text-center"><div class="inline-block w-8 h-8 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mb-2"></div><p class="text-xs text-gray-500">Memuat data ${analysisSymbol}...</p></div>`;
 
     document.getElementById('fundLoading').classList.remove('hidden');
-    document.getElementById('fundLoading').textContent = `Memuat data fundamental ${currentYahooSymbol}...`;
+    document.getElementById('fundLoading').textContent = `Memuat data fundamental ${analysisSymbol}...`;
     document.getElementById('fundContent').classList.add('hidden');
     document.getElementById('newsLoading').classList.remove('hidden');
-    document.getElementById('newsLoading').textContent = `Memuat berita ${currentYahooSymbol}...`;
+    document.getElementById('newsLoading').textContent = `Memuat berita ${analysisSymbol}...`;
     document.getElementById('newsContent').classList.add('hidden');
 
     const range = document.getElementById('rangeSelect').value;
+
+    // Helper: cek apakah symbol masih sama (race condition guard)
+    const isStillActive = () => {
+        if (currentYahooSymbol !== analysisSymbol) {
+            console.warn(`⚠️ Symbol berubah selama analisis! Analysis=${analysisSymbol}, Current=${currentYahooSymbol}. Skip update UI.`);
+            return false;
+        }
+        return true;
+    };
 
     // === 1. TEKNIKAL ===
     try {
@@ -2458,12 +2488,13 @@ async function runFullAnalysis() {
         const rangeFallbacks = [range, '6mo', '3mo'];
         for (const r of rangeFallbacks) {
             try {
-                chartData = await fetchYahooChartLong(currentYahooSymbol, '1d', r);
+                chartData = await fetchYahooChartLong(analysisSymbol, '1d', r);
                 if (chartData.candles.length >= 30) break;
             } catch (e) {
                 console.log(`Range ${r} gagal: ${e.message.substring(0, 50)}`);
             }
         }
+        if (!isStillActive()) { mainAnalysisInProgress = false; return; }
         if (!chartData || chartData.candles.length < 30) throw new Error('Data chart tidak cukup setelah semua fallback range');
         const { candles, meta } = chartData;
         lastTechAnalysis = analyzeTechnical(candles);
@@ -2472,7 +2503,7 @@ async function runFullAnalysis() {
         updateTechnicalPanel(lastTechAnalysis);
         l.style.display = 'none';
     } catch (e) {
-        l.innerHTML = `<div class="text-center"><p class="text-xs text-red-400">Gagal memuat teknikal</p><p class="text-xs text-gray-500 mt-1">${e.message}</p></div>`;
+        l.innerHTML = `<div class="text-center"><p class="text-xs text-red-400">Gagal memuat teknikal ${analysisSymbol}</p><p class="text-xs text-gray-500 mt-1">${e.message}</p></div>`;
         console.error('Tech analysis error:', e);
     }
 
@@ -2480,16 +2511,20 @@ async function runFullAnalysis() {
     // Globals sudah di-reset di awal runFullAnalysis
     const fundPromise = (async () => {
         try {
-            if (currentMarket === 'CRYPTO') {
+            if (analysisMarket === 'CRYPTO') {
                 lastFundAnalysis = { score: 0, signal: 'N/A', reasons: ['Analisis fundamental tidak berlaku untuk crypto'], ratios: {} };
             } else {
-                let qs = await fetchYahooQuoteSummary(currentYahooSymbol);
+                let qs = await fetchYahooQuoteSummary(analysisSymbol);
+
+                // Race condition check setelah async fetch
+                if (!isStillActive()) return;
 
                 // Parallel: fetch multiple FMP endpoints untuk fitur tambahan
-                const isUS = !currentYahooSymbol.endsWith('.JK') && !currentYahooSymbol.endsWith('-USD');
+                const isUS = !analysisSymbol.endsWith('.JK') && !analysisSymbol.endsWith('-USD');
                 if (isUS && window.FMP_API_KEY) {
                     // Forecast analis
-                    fetchFMPAnalystEstimates(currentYahooSymbol).then(f => {
+                    fetchFMPAnalystEstimates(analysisSymbol).then(f => {
+                        if (!isStillActive()) return;
                         if (f && f.length > 0) {
                             window._lastForecast = f;
                             if (lastFundAnalysis && !document.getElementById('fundContent').classList.contains('hidden')) {
@@ -2499,7 +2534,8 @@ async function runFullAnalysis() {
                     }).catch(e => console.log('Analyst estimates fetch error:', e));
 
                     // Price target
-                    fetchFMPPriceTarget(currentYahooSymbol).then(pt => {
+                    fetchFMPPriceTarget(analysisSymbol).then(pt => {
+                        if (!isStillActive()) return;
                         if (pt) {
                             window._lastPriceTarget = pt;
                             if (lastFundAnalysis && !document.getElementById('fundContent').classList.contains('hidden')) {
@@ -2509,7 +2545,8 @@ async function runFullAnalysis() {
                     }).catch(e => console.log('Price target fetch error:', e));
 
                     // Dividends
-                    fetchFMPDividends(currentYahooSymbol).then(div => {
+                    fetchFMPDividends(analysisSymbol).then(div => {
+                        if (!isStillActive()) return;
                         if (div && div.length > 0) {
                             window._lastDividends = div;
                             if (lastFundAnalysis && !document.getElementById('fundContent').classList.contains('hidden')) {
@@ -2519,7 +2556,8 @@ async function runFullAnalysis() {
                     }).catch(e => console.log('Dividends fetch error:', e));
 
                     // Sector peers
-                    fetchFMPSectorPeers(currentYahooSymbol).then(peers => {
+                    fetchFMPSectorPeers(analysisSymbol).then(peers => {
+                        if (!isStillActive()) return;
                         if (peers) {
                             window._lastPeers = peers;
                             if (lastFundAnalysis && !document.getElementById('fundContent').classList.contains('hidden')) {
@@ -2538,6 +2576,9 @@ async function runFullAnalysis() {
                         }
                     }
                 }
+
+                // Race condition check sebelum final fundamental processing
+                if (!isStillActive()) return;
 
                 // Fallback: jika Yahoo quoteSummary gagal (auth issue), gunakan chart meta sebagai minimal data
                 if (!qs && lastTechAnalysis && lastTechAnalysis._meta) {
@@ -2562,7 +2603,7 @@ async function runFullAnalysis() {
                         cashflowStatementHistory: { cashflowStatements: [] },
                     };
                 }
-                lastFundAnalysis = analyzeFundamental(qs, currentMarket);
+                lastFundAnalysis = analyzeFundamental(qs, analysisMarket);
                 if (qs && qs._source === 'chart-meta') {
                     lastFundAnalysis.reasons.unshift('⚠️ Data fundamental terbatas - masukkan FMP API key (klik ⚙️) untuk data lengkap');
                 }
@@ -2578,22 +2619,25 @@ async function runFullAnalysis() {
     // === 3. BERITA (parallel) ===
     const newsPromise = (async () => {
         try {
-            const symbolClean = currentYahooSymbol.replace('.JK', '').replace('-USD', '');
-            const isID = currentMarket === 'IDX';
+            const symbolClean = analysisSymbol.replace('.JK', '').replace('-USD', '');
+            const isID = analysisMarket === 'IDX';
             const companyName = lastFundAnalysis && lastFundAnalysis.ratios && lastFundAnalysis.ratios.companyName !== '—' ? lastFundAnalysis.ratios.companyName : symbolClean;
             const macroQuery = isID ?
                 `${symbolClean} OR ${companyName} OR saham OR ekonomi OR "Bank Indonesia" OR inflasi` :
                 `${symbolClean} OR ${companyName} OR stock OR economy OR "interest rate" OR inflation OR fed`;
 
             const [stockNews, macroNews] = await Promise.all([
-                fetchYahooNews(currentYahooSymbol, 15),
+                fetchYahooNews(analysisSymbol, 15),
                 fetchMacroNews(macroQuery, isID ? 'id' : 'en')
             ]);
 
-            lastNewsAnalysis = analyzeNews(stockNews, macroNews, currentMarket);
+            if (!isStillActive()) return;
+
+            lastNewsAnalysis = analyzeNews(stockNews, macroNews, analysisMarket);
             updateNewsPanel(lastNewsAnalysis);
         } catch (e) {
             console.error('News analysis error:', e);
+            if (!isStillActive()) return;
             lastNewsAnalysis = { score: 0, signal: 'HOLD', reasons: ['Gagal memuat berita'], articles: [], posCount: 0, neuCount: 0, negCount: 0, impact: 'Gagal memuat berita: ' + e.message };
             updateNewsPanel(lastNewsAnalysis);
         }
@@ -2602,8 +2646,15 @@ async function runFullAnalysis() {
     await Promise.all([fundPromise, newsPromise]);
 
     // === 4. FINAL RECOMMENDATION ===
+    // Race condition check terakhir sebelum render final
+    if (!isStillActive()) {
+        console.log(`Analysis for ${analysisSymbol} aborted (user switched symbol). Skipping final UI update.`);
+        mainAnalysisInProgress = false;
+        return;
+    }
     const final = generateFinalRecommendation(lastTechAnalysis, lastFundAnalysis, lastNewsAnalysis);
     updateFinalPanel(final);
+    console.log(`✅ runFullAnalysis DONE for symbol=${analysisSymbol}`);
     mainAnalysisInProgress = false;
 }
 
