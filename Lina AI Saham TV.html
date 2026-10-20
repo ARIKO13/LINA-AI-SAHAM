@@ -458,6 +458,61 @@
                     </div>
                 </div>
 
+                <!-- Price Target Konsensus (BARU) -->
+                <div id="priceTargetSection" class="hidden">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">🎯 Price Target Konsensus <span class="text-[9px] text-blue-400 ml-1">(FMP)</span></h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="priceTargetGrid"></div>
+                </div>
+
+                <!-- Dividend History 5 Tahun (BARU) -->
+                <div id="dividendSection" class="hidden">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">💰 Dividen 5 Tahun Terakhir <span class="text-[9px] text-blue-400 ml-1">(FMP)</span></h3>
+                    <div class="overflow-x-auto scroll-thin">
+                        <table class="w-full text-xs">
+                            <thead class="bg-gray-800/40">
+                                <tr class="text-gray-500 border-b border-gray-700">
+                                    <th class="text-left px-2 py-1.5 font-medium">Tanggal</th>
+                                    <th class="text-right px-2 py-1.5 font-medium">Dividen</th>
+                                    <th class="text-right px-2 py-1.5 font-medium">Yield</th>
+                                    <th class="text-left px-2 py-1.5 font-medium">Frekuensi</th>
+                                    <th class="text-left px-2 py-1.5 font-medium">Pembayaran</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dividendTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Sector Peers (BARU) -->
+                <div id="peersSection" class="hidden">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">🏢 Sektor & Peer Comparison <span class="text-[9px] text-blue-400 ml-1">(FMP)</span></h3>
+                    <div class="bg-gray-800/40 rounded p-3 border border-gray-700/50">
+                        <div class="text-[10px] text-gray-500 mb-1">Sektor</div>
+                        <div id="peerSector" class="text-sm font-semibold text-gray-200 mb-2">—</div>
+                        <div class="text-[10px] text-gray-500 mb-1">Peer Companies (kompetitor sektor)</div>
+                        <div id="peerList" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+                </div>
+
+                <!-- Income Statement 4 Tahun (BARU) -->
+                <div id="incomeSection" class="hidden">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">📋 Income Statement (4 Tahun) <span class="text-[9px] text-blue-400 ml-1">(FMP)</span></h3>
+                    <div class="overflow-x-auto scroll-thin">
+                        <table class="w-full text-xs">
+                            <thead class="bg-gray-800/40">
+                                <tr class="text-gray-500 border-b border-gray-700">
+                                    <th class="text-left px-2 py-1.5 font-medium">Item</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="incCol1">Y1</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="incCol2">Y2</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="incCol3">Y3</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="incCol4">Y4</th>
+                                </tr>
+                            </thead>
+                            <tbody id="incomeTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Ringkasan Analisis Fundamental -->
                 <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
                     <div class="text-[10px] text-gray-500 uppercase mb-2">Analisis & Alasan</div>
@@ -1079,6 +1134,9 @@ async function fetchFMPData(symbol) {
 
     console.log('✓ FMP data loaded:', { hasProfile: !!prof, hasRatios: !!rat, hasKeyMetrics: !!keyMet, hasIncome: !!inc, hasBalance: !!bal, hasCashflow: !!cf });
 
+    // Simpan FMP profile ke global untuk dipakai di Price Target section
+    window._lastFMPProfile = prof;
+
     // FMP /stable/ field names (verified):
     // ratios-ttm: priceToEarningsRatioTTM, priceToBookRatioTTM, priceToSalesRatioTTM, priceToFreeCashFlowRatioTTM,
     //             priceToOperatingCashFlowRatioTTM, priceToEarningsGrowthRatioTTM (PEG), debtToEquityRatioTTM,
@@ -1249,6 +1307,59 @@ async function fetchFMPAnalystEstimates(symbol) {
             return data.slice(0, 4); // ambil 4 tahun forecast
         }
     } catch (e) { console.log('FMP analyst estimates failed:', e.message); }
+    return null;
+}
+
+// FMP untuk dividend history (5 tahun terakhir)
+async function fetchFMPDividends(symbol) {
+    if (!window.FMP_API_KEY) return null;
+    const fmpSymbol = symbol.toUpperCase();
+    const url = `https://financialmodelingprep.com/stable/dividends?symbol=${fmpSymbol}&apikey=${window.FMP_API_KEY}`;
+    try {
+        const data = await fetchDirect(url, true, 8000);
+        if (Array.isArray(data)) {
+            // Filter 5 tahun terakhir + urutkan ascending
+            const cutoff = Date.now() - 5 * 365 * 86400000;
+            return data.filter(d => new Date(d.date).getTime() >= cutoff).reverse();
+        }
+    } catch (e) { console.log('FMP dividends failed:', e.message); }
+    return null;
+}
+
+// FMP untuk price target summary (konsensus analisis)
+async function fetchFMPPriceTarget(symbol) {
+    if (!window.FMP_API_KEY) return null;
+    const fmpSymbol = symbol.toUpperCase();
+    const url = `https://financialmodelingprep.com/stable/price-target-summary?symbol=${fmpSymbol}&apikey=${window.FMP_API_KEY}`;
+    try {
+        const data = await fetchDirect(url, true, 8000);
+        if (Array.isArray(data) && data.length > 0) return data[0];
+    } catch (e) { console.log('FMP price target failed:', e.message); }
+    return null;
+}
+
+// FMP untuk sector peers (peer comparison)
+async function fetchFMPSectorPeers(symbol) {
+    if (!window.FMP_API_KEY) return null;
+    const fmpSymbol = symbol.toUpperCase();
+    // Pakai stock-screener dengan sector yang sama
+    // Pertama ambil profile dulu untuk dapat sector
+    const profUrl = `https://financialmodelingprep.com/stable/profile?symbol=${fmpSymbol}&apikey=${window.FMP_API_KEY}`;
+    try {
+        const prof = await fetchDirect(profUrl, true, 8000);
+        if (!Array.isArray(prof) || !prof[0] || !prof[0].sector) return null;
+        const sector = prof[0].sector;
+        // Stock screener butuh POST - tidak bisa via fetchDirect simple
+        // Pakai endpoint stock-peers sebagai alternatif
+        const peersUrl = `https://financialmodelingprep.com/api/v3/stock_peers?symbol=${fmpSymbol}&apikey=${window.FMP_API_KEY}`;
+        try {
+            const peersData = await fetchDirect(peersUrl, true, 8000);
+            if (Array.isArray(peersData) && peersData.length > 0) {
+                return { sector, peers: peersData[0].peers || [] };
+            }
+        } catch (e) {}
+        return { sector, peers: [] };
+    } catch (e) { console.log('FMP sector peers failed:', e.message); }
     return null;
 }
 
@@ -2030,6 +2141,111 @@ function updateFundamentalPanel(fund) {
         forecastSection.classList.add('hidden');
     }
 
+    // Price Target Konsensus (BARU)
+    const priceTargetSection = document.getElementById('priceTargetSection');
+    if (window._lastPriceTarget) {
+        const pt = window._lastPriceTarget;
+        // Get current price dari fund.ratios atau FMP profile (kalau ada)
+        const curPrice = (window._lastFMPProfile && window._lastFMPProfile.price) || null;
+        priceTargetSection.classList.remove('hidden');
+        const card = (label, count, target) => {
+            const diff = (curPrice && target) ? ((target - curPrice) / curPrice * 100).toFixed(1) : null;
+            const diffHtml = diff !== null ? (diff > 0 ? `<span class="text-[9px] text-green-400">+${diff}%</span>` : `<span class="text-[9px] text-red-400">${diff}%</span>`) : '';
+            return `<div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                <div class="text-[10px] text-gray-500">${label}</div>
+                <div class="text-sm font-bold text-gray-200">$${(target || 0).toFixed(2)}</div>
+                <div class="text-[9px] text-gray-500">${count} analisis</div>
+                ${diffHtml}
+            </div>`;
+        };
+        document.getElementById('priceTargetGrid').innerHTML = `
+            ${card('Bulan Ini', pt.lastMonthCount || 0, pt.lastMonthAvgPriceTarget)}
+            ${card('Kuartal Ini', pt.lastQuarterCount || 0, pt.lastQuarterAvgPriceTarget)}
+            ${card('Tahun Ini', pt.lastYearCount || 0, pt.lastYearAvgPriceTarget)}
+            ${card('All-Time', pt.allTimeCount || 0, pt.allTimeAvgPriceTarget)}
+        `;
+    } else {
+        priceTargetSection.classList.add('hidden');
+    }
+
+    // Dividend History (BARU)
+    const dividendSection = document.getElementById('dividendSection');
+    if (window._lastDividends && window._lastDividends.length > 0) {
+        dividendSection.classList.remove('hidden');
+        // Show last 15 dividends
+        const recent = window._lastDividends.slice(0, 15);
+        document.getElementById('dividendTable').innerHTML = recent.map(d => {
+            const date = d.date || '—';
+            const payDate = d.paymentDate || '—';
+            const div = d.dividend || 0;
+            const yield_ = d.yield || 0;
+            const freq = d.frequency || '—';
+            return `<tr class="border-b border-gray-800/30 hover:bg-gray-800/30">
+                <td class="px-2 py-1.5 text-gray-300">${date}</td>
+                <td class="text-right px-2 py-1.5 text-green-400 font-semibold">$${div.toFixed(4)}</td>
+                <td class="text-right px-2 py-1.5 text-gray-400">${yield_.toFixed(3)}%</td>
+                <td class="px-2 py-1.5 text-gray-400">${freq}</td>
+                <td class="px-2 py-1.5 text-gray-500">${payDate}</td>
+            </tr>`;
+        }).join('');
+    } else {
+        dividendSection.classList.add('hidden');
+    }
+
+    // Sector Peers (BARU)
+    const peersSection = document.getElementById('peersSection');
+    if (window._lastPeers && window._lastPeers.sector) {
+        peersSection.classList.remove('hidden');
+        document.getElementById('peerSector').textContent = window._lastPeers.sector;
+        const peersList = document.getElementById('peerList');
+        if (window._lastPeers.peers && window._lastPeers.peers.length > 0) {
+            peersList.innerHTML = window._lastPeers.peers.map(p =>
+                `<button class="px-2 py-1 text-[10px] bg-gray-700 hover:bg-blue-600 text-gray-200 rounded transition cursor-pointer" onclick="loadSymbolFromScreener('NASDAQ','${p}')">${p}</button>`
+            ).join('');
+        } else {
+            peersList.innerHTML = '<span class="text-[10px] text-gray-600">Tidak ada peer data</span>';
+        }
+    } else {
+        peersSection.classList.add('hidden');
+    }
+
+    // Income Statement 4 Tahun (BARU)
+    const incomeSection = document.getElementById('incomeSection');
+    if (window._lastIncome && window._lastIncome.length > 0) {
+        incomeSection.classList.remove('hidden');
+        const inc = window._lastIncome;
+        // Set column headers (fiscal year dates)
+        for (let i = 0; i < 4; i++) {
+            const col = document.getElementById(`incCol${i+1}`);
+            if (col && inc[i]) {
+                const date = inc[i].date || inc[i].fiscalYear || `Y${i+1}`;
+                col.textContent = typeof date === 'string' ? date.substring(0, 4) : `Y${i+1}`;
+            }
+        }
+        // Build rows: Revenue, Gross Profit, EBITDA, EBIT, Net Income, EPS
+        const rows = [
+            { label: 'Revenue', key: 'revenue', color: 'text-gray-200' },
+            { label: 'Gross Profit', key: 'grossProfit', color: 'text-gray-300' },
+            { label: 'EBITDA', key: 'ebitda', color: 'text-gray-300' },
+            { label: 'EBIT (Operating)', key: 'ebit', color: 'text-gray-300' },
+            { label: 'Net Income', key: 'netIncome', color: 'text-green-400' },
+            { label: 'EPS (diluted)', key: 'epsDiluted', color: 'text-blue-400', formatter: (v) => v != null ? '$' + v.toFixed(2) : '—' },
+        ];
+        document.getElementById('incomeTable').innerHTML = rows.map(row => {
+            const cells = [0, 1, 2, 3].map(i => {
+                const v = inc[i] ? inc[i][row.key] : null;
+                const formatted = row.formatter ? row.formatter(v) : (v != null ? fmtBig(v) : '—');
+                return `<td class="text-right px-2 py-1.5 ${row.color}">${formatted}</td>`;
+            }).join('');
+            return `<tr class="border-b border-gray-800/30 hover:bg-gray-800/30">
+                <td class="px-2 py-1.5 font-medium text-gray-200">${row.label}</td>
+                ${cells}
+            </tr>`;
+        }).join('');
+    } else {
+        incomeSection.classList.add('hidden');
+    }
+
     // Reasons
     document.getElementById('fundReasons').innerHTML = fund.reasons.map(r => `<div>${r}</div>`).join('');
 
@@ -2171,8 +2387,12 @@ async function runFullAnalysis() {
         console.error('Tech analysis error:', e);
     }
 
-    // === 2. FUNDAMENTAL (parallel with news + analyst estimates) ===
-    window._lastForecast = null; // reset forecast
+    // === 2. FUNDAMENTAL (parallel with news + analyst estimates + dividends + price target + peers + income) ===
+    window._lastForecast = null;
+    window._lastPriceTarget = null;
+    window._lastDividends = null;
+    window._lastPeers = null;
+    window._lastIncome = null;
     const fundPromise = (async () => {
         try {
             if (currentMarket === 'CRYPTO') {
@@ -2180,18 +2400,58 @@ async function runFullAnalysis() {
             } else {
                 let qs = await fetchYahooQuoteSummary(currentYahooSymbol);
 
-                // Parallel: fetch analyst estimates (FMP) untuk forecast table
+                // Parallel: fetch multiple FMP endpoints untuk fitur tambahan
                 const isUS = !currentYahooSymbol.endsWith('.JK') && !currentYahooSymbol.endsWith('-USD');
                 if (isUS && window.FMP_API_KEY) {
+                    // Forecast analis
                     fetchFMPAnalystEstimates(currentYahooSymbol).then(f => {
                         if (f && f.length > 0) {
                             window._lastForecast = f;
-                            // Re-render forecast table kalau fundamental panel sudah ditampilkan
                             if (lastFundAnalysis && !document.getElementById('fundContent').classList.contains('hidden')) {
                                 updateFundamentalPanel(lastFundAnalysis);
                             }
                         }
                     }).catch(e => console.log('Analyst estimates fetch error:', e));
+
+                    // Price target
+                    fetchFMPPriceTarget(currentYahooSymbol).then(pt => {
+                        if (pt) {
+                            window._lastPriceTarget = pt;
+                            if (lastFundAnalysis && !document.getElementById('fundContent').classList.contains('hidden')) {
+                                updateFundamentalPanel(lastFundAnalysis);
+                            }
+                        }
+                    }).catch(e => console.log('Price target fetch error:', e));
+
+                    // Dividends
+                    fetchFMPDividends(currentYahooSymbol).then(div => {
+                        if (div && div.length > 0) {
+                            window._lastDividends = div;
+                            if (lastFundAnalysis && !document.getElementById('fundContent').classList.contains('hidden')) {
+                                updateFundamentalPanel(lastFundAnalysis);
+                            }
+                        }
+                    }).catch(e => console.log('Dividends fetch error:', e));
+
+                    // Sector peers
+                    fetchFMPSectorPeers(currentYahooSymbol).then(peers => {
+                        if (peers) {
+                            window._lastPeers = peers;
+                            if (lastFundAnalysis && !document.getElementById('fundContent').classList.contains('hidden')) {
+                                updateFundamentalPanel(lastFundAnalysis);
+                            }
+                        }
+                    }).catch(e => console.log('Peers fetch error:', e));
+
+                    // Income statement (ambil dari qs._fmpRaw jika ada)
+                    if (qs && qs._source === 'fmp' && qs._fmpRaw && qs._fmpRaw.inc) {
+                        // qs._fmpRaw.inc hanya 1 tahun pertama, perlu fetch 4 tahun
+                        // Sudah ada di incomeStatementHistory
+                        const incomeHist = qs.incomeStatementHistory?.incomeStatementHistory || [];
+                        if (incomeHist.length > 0) {
+                            window._lastIncome = incomeHist;
+                        }
+                    }
                 }
 
                 // Fallback: jika Yahoo quoteSummary gagal (auth issue), gunakan chart meta sebagai minimal data
