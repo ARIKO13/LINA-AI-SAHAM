@@ -1,0 +1,103 @@
+alynne.my.id {
+    header Cross-Origin-Opener-Policy "same-origin"
+    header Cross-Origin-Embedder-Policy "credentialless"
+    header Cross-Origin-Resource-Policy "cross-origin"
+    @static path /_astro/*
+    header @static Cache-Control "public, max-age=300, must-revalidate"
+    header @static ?Cache-Control ""
+
+    @nocache {
+        path /*
+        not path /_astro/*
+    }
+    header @nocache Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
+    header @nocache Pragma "no-cache"
+
+    # Whisper API — long timeout for large uploads (up to 1 hour)
+    @whisper path /api/whisper/*
+    handle @whisper {
+        reverse_proxy localhost:3000 {
+            # Critical: these timeouts allow large file uploads
+            transport http {
+                dial_timeout 60s
+                response_header_timeout 0
+                read_timeout 3600s
+                write_timeout 3600s
+            }
+            flush_interval -1
+        }
+    }
+
+    # Default — all other routes
+    handle {
+        reverse_proxy localhost:3000
+    }
+}
+
+# ===== Lina AI - Analisis Saham (v2 dengan CORS proxy) =====
+saham.alynne.my.id {
+    # CORS Proxy untuk Yahoo Finance (self-hosted, no rate limit)
+    @corsProxy path /yahoo-proxy/*
+    handle @corsProxy {
+        uri strip_prefix /yahoo-proxy
+        reverse_proxy https://query2.finance.yahoo.com {
+            header_up Host {upstream_hostport}
+            header_up User-Agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            header_up Accept "*/*"
+        }
+        header {
+            Access-Control-Allow-Origin "*"
+            Access-Control-Allow-Methods "GET, POST, OPTIONS"
+            Access-Control-Allow-Headers "*"
+            Access-Control-Expose-Headers "*"
+        }
+    }
+
+    # CORS Proxy untuk Yahoo Finance v1 (alternate endpoint)
+    @corsProxyV1 path /yahoo-v1/*
+    handle @corsProxyV1 {
+        uri strip_prefix /yahoo-v1
+        reverse_proxy https://query1.finance.yahoo.com {
+            header_up Host {upstream_hostport}
+            header_up User-Agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            header_up Accept "*/*"
+        }
+        header {
+            Access-Control-Allow-Origin "*"
+            Access-Control-Allow-Methods "GET, POST, OPTIONS"
+            Access-Control-Allow-Headers "*"
+            Access-Control-Expose-Headers "*"
+        }
+    }
+
+    # Main app
+    root * /var/www/lina-ai
+    encode gzip zstd
+
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
+
+    # Cache static assets
+    @static {
+        path *.css *.js *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
+    }
+    header @static Cache-Control "public, max-age=3600"
+
+    # Main route - serve index.html + static files
+    handle {
+        root * /var/www/lina-ai
+        file_server
+        try_files {path} /index.html
+        header Cache-Control "no-store, no-cache, must-revalidate"
+    }
+
+    log {
+        output file /var/log/caddy/lina-ai-access.log
+        format json
+    }
+}
