@@ -770,11 +770,11 @@ function mapSymbol(market, unified) {
     if (market === 'NASDAQ') { tv = `NASDAQ:${sym}`; yahoo = sym; }
     else if (market === 'IDX') { tv = `IDX:${sym}`; yahoo = `${sym}.JK`; }
     else if (market === 'CRYPTO') {
-        // FIX BUG: regex replace salah handle BNBUSD → BN (BUSD match dulu sebelum USD)
-        // Pakai logic explicit: check USDT/BUSD/USD dari yang paling panjang
+        // FIX BUG: BNBUSD harusnya → BNB + USD (bukan BN + BUSD)
+        // Prioritas: USDT (4 char) dulu, kalau tidak baru USD (3 char)
+        // BUSD pair sudah deprecated di Binance, jadi tidak perlu handle
         let coin = sym;
         if (coin.endsWith('USDT')) coin = coin.slice(0, -4);
-        else if (coin.endsWith('BUSD')) coin = coin.slice(0, -4);
         else if (coin.endsWith('USD')) coin = coin.slice(0, -3);
         tv = `BINANCE:${coin}USDT`; yahoo = `${coin}-USD`;
     } else { tv = `NASDAQ:${sym}`; yahoo = sym; }
