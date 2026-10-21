@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Version stamp untuk debugging - cek apakah browser pakai versi terbaru -->
-    <meta name="version" content="v8-2026-10-21">
-    <meta name="description" content="Lina AI - Analisis Saham: Teknikal + Fundamental + Berita (v8 - yfinance proxy)">
-    <title>Lina AI v8 - Analisis Saham (Teknikal + Fundamental + Berita)</title>
+    <meta name="version" content="v9-2026-10-21">
+    <meta name="description" content="Lina AI - Analisis Saham: Teknikal + Fundamental + Berita (v9 - raw financial statements)">
+    <title>Lina AI v9 - Analisis Saham (Teknikal + Fundamental + Berita)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -512,6 +512,72 @@
                                 </tr>
                             </thead>
                             <tbody id="incomeTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Income Statement Mentah (BARU - via yfinance) -->
+                <div id="rawIncomeSection" class="hidden">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2 flex items-center justify-between">
+                        <span>📋 Laporan Laba Rugi (Income Statement) <span class="text-[9px] text-blue-400 ml-1">(yfinance raw)</span></span>
+                        <button id="exportIncomeBtn" class="text-[10px] bg-gray-700 hover:bg-blue-600 text-gray-200 px-2 py-1 rounded transition">⬇ Export CSV</button>
+                    </h3>
+                    <div class="overflow-x-auto scroll-thin max-h-80 overflow-y-auto">
+                        <table class="w-full text-xs">
+                            <thead class="sticky top-0 bg-gray-800/40">
+                                <tr class="text-gray-500 border-b border-gray-700">
+                                    <th class="text-left px-2 py-1.5 font-medium">Item</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="rawIncCol1">Y1</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="rawIncCol2">Y2</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="rawIncCol3">Y3</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="rawIncCol4">Y4</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rawIncomeTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Balance Sheet Mentah (BARU - via yfinance) -->
+                <div id="rawBalanceSection" class="hidden">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2 flex items-center justify-between">
+                        <span>📊 Neraca (Balance Sheet) <span class="text-[9px] text-blue-400 ml-1">(yfinance raw)</span></span>
+                        <button id="exportBalanceBtn" class="text-[10px] bg-gray-700 hover:bg-blue-600 text-gray-200 px-2 py-1 rounded transition">⬇ Export CSV</button>
+                    </h3>
+                    <div class="overflow-x-auto scroll-thin max-h-80 overflow-y-auto">
+                        <table class="w-full text-xs">
+                            <thead class="sticky top-0 bg-gray-800/40">
+                                <tr class="text-gray-500 border-b border-gray-700">
+                                    <th class="text-left px-2 py-1.5 font-medium">Item</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="rawBsCol1">Y1</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="rawBsCol2">Y2</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="rawBsCol3">Y3</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="rawBsCol4">Y4</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rawBalanceTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Cash Flow Mentah (BARU - via yfinance) -->
+                <div id="rawCashflowSection" class="hidden">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2 flex items-center justify-between">
+                        <span>💰 Arus Kas (Cash Flow) <span class="text-[9px] text-blue-400 ml-1">(yfinance raw)</span></span>
+                        <button id="exportCashflowBtn" class="text-[10px] bg-gray-700 hover:bg-blue-600 text-gray-200 px-2 py-1 rounded transition">⬇ Export CSV</button>
+                    </h3>
+                    <div class="overflow-x-auto scroll-thin max-h-80 overflow-y-auto">
+                        <table class="w-full text-xs">
+                            <thead class="sticky top-0 bg-gray-800/40">
+                                <tr class="text-gray-500 border-b border-gray-700">
+                                    <th class="text-left px-2 py-1.5 font-medium">Item</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="rawCfCol1">Y1</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="rawCfCol2">Y2</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="rawCfCol3">Y3</th>
+                                    <th class="text-right px-2 py-1.5 font-medium" id="rawCfCol4">Y4</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rawCashflowTable"></tbody>
                         </table>
                     </div>
                 </div>
@@ -1578,6 +1644,28 @@ async function fetchFMPSectorPeers(symbol) {
     return null;
 }
 
+// === SELF-HOSTED YFINANCE PROXY untuk data laporan keuangan mentah ===
+// Endpoint: /yfinance/financials/<symbol> - income statement (4 tahun)
+// Endpoint: /yfinance/balance-sheet/<symbol> - balance sheet (4 tahun)
+// Endpoint: /yfinance/cashflow/<symbol> - cash flow (4 tahun)
+async function fetchYFinanceStatements(symbol, type) {
+    // Auto-detect base URL berdasarkan host
+    let baseUrl;
+    if (location.hostname === 'saham.alynne.my.id') {
+        baseUrl = '/yfinance/';
+    } else {
+        baseUrl = 'https://saham.alynne.my.id/yfinance/';
+    }
+    const url = baseUrl + type + '/' + encodeURIComponent(symbol);
+    try {
+        const data = await fetchDirect(url, true, 15000);
+        return data;
+    } catch (e) {
+        console.log(`YFinance ${type} fetch failed:`, e.message);
+        return null;
+    }
+}
+
 async function fetchYahooNews(symbol, count = 20) {
     // 1. Coba Yahoo Finance search (perlu CORS proxy)
     const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(symbol)}&newsCount=${count}&quotesCount=0`;
@@ -2297,7 +2385,8 @@ function resetFundamentalPanelUI() {
     const reasons = document.getElementById('fundReasons');
     if (reasons) reasons.innerHTML = '<p>Menunggu data...</p>';
     // Hide sub-sections
-    ['forecastSection', 'priceTargetSection', 'dividendSection', 'peersSection', 'incomeSection']
+    ['forecastSection', 'priceTargetSection', 'dividendSection', 'peersSection', 'incomeSection',
+     'rawIncomeSection', 'rawBalanceSection', 'rawCashflowSection']
         .forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
 }
 
@@ -2358,6 +2447,121 @@ function updateTechnicalPanel(tech) {
     sb.className = `${badgeClass(tech.signal)} px-3 py-1 rounded text-xs font-semibold`;
 }
 
+// Render raw financial statement (income/balance/cashflow) dari yfinance proxy
+// Data format: array of {date: 'YYYY-MM-DD', <key>: value, ...} sorted DESC (newest first)
+function renderRawStatement(sectionId, tableId, colIds, statements) {
+    const section = document.getElementById(sectionId);
+    const table = document.getElementById(tableId);
+    if (!section || !table) return;
+
+    if (!statements || statements.length === 0) {
+        section.classList.add('hidden');
+        return;
+    }
+    section.classList.remove('hidden');
+
+    // Sort ascending by date (oldest first, so Y1 = oldest, Y4 = newest)
+    const sorted = [...statements].sort((a, b) => new Date(a.date) - new Date(b.date));
+    // Ambil 4 tahun terbaru
+    const years = sorted.slice(-4);
+    // Pad kalau kurang dari 4 tahun
+    while (years.length < 4) years.unshift(null);
+
+    // Set column headers (year)
+    for (let i = 0; i < 4; i++) {
+        const col = document.getElementById(colIds[i]);
+        if (col) {
+            col.textContent = years[i] ? (years[i].date || '').substring(0, 4) : '—';
+        }
+    }
+
+    // Kumpulkan semua unique keys (exclude date)
+    const allKeys = new Set();
+    years.forEach(y => {
+        if (y) {
+            Object.keys(y).forEach(k => {
+                if (k !== 'date' && k !== 'index') allKeys.add(k);
+            });
+        }
+    });
+
+    // Format value untuk display
+    const fmtVal = (v) => {
+        if (v === null || v === undefined || (typeof v === 'number' && isNaN(v))) return '—';
+        const num = typeof v === 'number' ? v : parseFloat(v);
+        if (isNaN(num)) return '—';
+        const abs = Math.abs(num);
+        if (abs >= 1e12) return (num / 1e12).toFixed(2) + 'T';
+        if (abs >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+        if (abs >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+        if (abs >= 1e3) return (num / 1e3).toFixed(2) + 'K';
+        return num.toFixed(2);
+    };
+
+    // Build rows - urutkan abjad
+    const sortedKeys = Array.from(allKeys).sort();
+    table.innerHTML = sortedKeys.map(key => {
+        // Prettify key name: "Total Revenue" → "Total Revenue", "ebitda" → "EBITDA"
+        const displayKey = key
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, str => str.toUpperCase())
+            .replace(/\bEPS\b/i, 'EPS')
+            .replace(/\bEBITDA?\b/i, m => m.toUpperCase())
+            .replace(/\bROE\b|\bROA\b|\bPE\b|\bPB\b/gi, m => m.toUpperCase());
+        const cells = years.map(y => {
+            const v = y ? y[key] : null;
+            const formatted = fmtVal(v);
+            // Color: green jika positif, red jika negatif
+            let color = 'text-gray-300';
+            const num = typeof v === 'number' ? v : parseFloat(v);
+            if (!isNaN(num) && num !== 0) {
+                color = num > 0 ? 'text-gray-200' : 'text-red-400';
+            }
+            return `<td class="text-right px-2 py-1.5 ${color}">${formatted}</td>`;
+        }).join('');
+        return `<tr class="border-b border-gray-800/30 hover:bg-gray-800/30">
+            <td class="px-2 py-1.5 text-gray-300">${displayKey}</td>
+            ${cells}
+        </tr>`;
+    }).join('');
+}
+
+// Export statement ke CSV (untuk download)
+function exportStatementToCSV(statements, filename) {
+    if (!statements || statements.length === 0) {
+        alert('Tidak ada data untuk diexport');
+        return;
+    }
+    // Sort ascending
+    const sorted = [...statements].sort((a, b) => new Date(a.date) - new Date(b.date));
+    // Kumpulkan semua keys
+    const allKeys = new Set();
+    sorted.forEach(y => Object.keys(y).forEach(k => { if (k !== 'index') allKeys.add(k); }));
+    const keys = ['date', ...Array.from(allKeys).filter(k => k !== 'date')];
+
+    // Build CSV
+    const csv = [
+        keys.join(','),
+        ...sorted.map(row => keys.map(k => {
+            const v = row[k];
+            if (v === null || v === undefined) return '';
+            if (typeof v === 'string') return `"${v.replace(/"/g, '""')}"`;
+            return v;
+        }).join(','))
+    ].join('\n');
+
+    // Download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 function updateFundamentalPanel(fund) {
     if (!fund) return;
     // Debug log untuk verifikasi symbol yang sedang di-render
@@ -2411,7 +2615,6 @@ function updateFundamentalPanel(fund) {
 
     // Forecast Analis (BARU - via FMP)
     const forecastSection = document.getElementById('forecastSection');
-    const forecastTable = document.getElementById('forecastTable');
     if (window._lastForecast && window._lastForecast.length > 0) {
         forecastSection.classList.remove('hidden');
         forecastTable.innerHTML = window._lastForecast.map(f => {
@@ -2536,6 +2739,13 @@ function updateFundamentalPanel(fund) {
         incomeSection.classList.add('hidden');
     }
 
+    // Raw Income Statement via yfinance (BARU - data mentah lengkap)
+    renderRawStatement('rawIncomeSection', 'rawIncomeTable', ['rawIncCol1', 'rawIncCol2', 'rawIncCol3', 'rawIncCol4'], window._lastRawIncome);
+    // Raw Balance Sheet via yfinance
+    renderRawStatement('rawBalanceSection', 'rawBalanceTable', ['rawBsCol1', 'rawBsCol2', 'rawBsCol3', 'rawBsCol4'], window._lastRawBalance);
+    // Raw Cash Flow via yfinance
+    renderRawStatement('rawCashflowSection', 'rawCashflowTable', ['rawCfCol1', 'rawCfCol2', 'rawCfCol3', 'rawCfCol4'], window._lastRawCashflow);
+
     // Reasons
     document.getElementById('fundReasons').innerHTML = fund.reasons.map(r => `<div>${r}</div>`).join('');
 
@@ -2656,6 +2866,9 @@ async function runFullAnalysis() {
     window._lastDividends = null;
     window._lastPeers = null;
     window._lastIncome = null;
+    window._lastRawIncome = null;
+    window._lastRawBalance = null;
+    window._lastRawCashflow = null;
 
     // Clear cache (TTL 60s, tapi clear saat ganti symbol untuk fresh data)
     _cache.clear();
@@ -2787,6 +3000,44 @@ async function runFullAnalysis() {
                             window._lastIncome = incomeHist;
                         }
                     }
+                }
+
+                // ===== FETCH RAW FINANCIAL STATEMENTS via yfinance (BARU) =====
+                // Pakai yfinance proxy server - support US stocks + IDX + Crypto + global
+                // Tidak butuh API key (self-hosted di VPS)
+                if (analysisMarket !== 'CRYPTO') {
+                    // Income Statement
+                    fetchYFinanceStatements(analysisSymbol, 'financials').then(data => {
+                        if (!isStillActive()) return;
+                        if (data && data.incomeStatementHistory && data.incomeStatementHistory.length > 0) {
+                            window._lastRawIncome = data.incomeStatementHistory;
+                            if (lastFundAnalysis && !document.getElementById('fundContent').classList.contains('hidden')) {
+                                updateFundamentalPanel(lastFundAnalysis);
+                            }
+                        }
+                    }).catch(e => console.log('YFinance income fetch error:', e));
+
+                    // Balance Sheet
+                    fetchYFinanceStatements(analysisSymbol, 'balance-sheet').then(data => {
+                        if (!isStillActive()) return;
+                        if (data && data.balanceSheetStatements && data.balanceSheetStatements.length > 0) {
+                            window._lastRawBalance = data.balanceSheetStatements;
+                            if (lastFundAnalysis && !document.getElementById('fundContent').classList.contains('hidden')) {
+                                updateFundamentalPanel(lastFundAnalysis);
+                            }
+                        }
+                    }).catch(e => console.log('YFinance balance fetch error:', e));
+
+                    // Cash Flow
+                    fetchYFinanceStatements(analysisSymbol, 'cashflow').then(data => {
+                        if (!isStillActive()) return;
+                        if (data && data.cashflowStatements && data.cashflowStatements.length > 0) {
+                            window._lastRawCashflow = data.cashflowStatements;
+                            if (lastFundAnalysis && !document.getElementById('fundContent').classList.contains('hidden')) {
+                                updateFundamentalPanel(lastFundAnalysis);
+                            }
+                        }
+                    }).catch(e => console.log('YFinance cashflow fetch error:', e));
                 }
 
                 // Race condition check sebelum final fundamental processing
@@ -3073,6 +3324,20 @@ document.getElementById('notifBtn').addEventListener('click', async () => {
             notificationsEnabled = true; document.getElementById('notifBtn').style.background = '#1e3a5f';
             new Notification('✅ Lina AI', { body: 'Notifikasi diaktifkan. Anda akan menerima sinyal trading.' });
         }
+    }
+});
+
+// Export CSV buttons (BARU - export raw financial statements)
+document.addEventListener('click', (e) => {
+    if (e.target.id === 'exportIncomeBtn') {
+        const sym = currentYahooSymbol.replace('.JK', '').replace('-USD', '');
+        exportStatementToCSV(window._lastRawIncome, `${sym}_income_statement.csv`);
+    } else if (e.target.id === 'exportBalanceBtn') {
+        const sym = currentYahooSymbol.replace('.JK', '').replace('-USD', '');
+        exportStatementToCSV(window._lastRawBalance, `${sym}_balance_sheet.csv`);
+    } else if (e.target.id === 'exportCashflowBtn') {
+        const sym = currentYahooSymbol.replace('.JK', '').replace('-USD', '');
+        exportStatementToCSV(window._lastRawCashflow, `${sym}_cash_flow.csv`);
     }
 });
 
