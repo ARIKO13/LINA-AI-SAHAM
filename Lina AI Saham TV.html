@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Version stamp untuk debugging - cek apakah browser pakai versi terbaru -->
-    <meta name="version" content="v6-2026-10-20">
-    <meta name="description" content="Lina AI - Analisis Saham: Teknikal + Fundamental + Berita (v6)">
-    <title>Lina AI v6 - Analisis Saham (Teknikal + Fundamental + Berita)</title>
+    <meta name="version" content="v7-2026-10-21">
+    <meta name="description" content="Lina AI - Analisis Saham: Teknikal + Fundamental + Berita (v7 - self-hosted CORS proxy)">
+    <title>Lina AI v7 - Analisis Saham (Teknikal + Fundamental + Berita)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -936,7 +936,32 @@ function calculateATR(highs, lows, closes, p = 14) {
 const PROXIES = [
     // User-defined custom proxy (highest priority if set)
     { name: 'custom', fn: (u) => window.CUSTOM_PROXY_URL ? window.CUSTOM_PROXY_URL + u : null, wrap: null, conditional: true },
-    // allorigins (sometimes works)
+    // SELF-HOSTED CORS PROXY (saham.alynne.my.id) - paling reliable, no rate limit
+    // Reverse proxy via Caddy → Yahoo Finance, dengan CORS headers
+    // Auto-detect: pakai origin domain kalau app di-host di saham.alynne.my.id
+    { name: 'self-hosted-v2', fn: (u) => {
+        // Hanya untuk Yahoo Finance URLs
+        if (!u.includes('finance.yahoo.com')) return null;
+        // Cek apakah app di-host di domain kita sendiri (saham.alynne.my.id)
+        if (location.hostname === 'saham.alynne.my.id') {
+            // Same-origin request, no CORS issue! Pakai /yahoo-proxy/ untuk query2, /yahoo-v1/ untuk query1
+            if (u.includes('query2.finance.yahoo.com')) {
+                return u.replace('https://query2.finance.yahoo.com/', '/yahoo-proxy/');
+            }
+            if (u.includes('query1.finance.yahoo.com')) {
+                return u.replace('https://query1.finance.yahoo.com/', '/yahoo-v1/');
+            }
+        }
+        // Untuk app di-host di tempat lain (localhost, dll), pakai full URL
+        if (u.includes('query2.finance.yahoo.com')) {
+            return u.replace('https://query2.finance.yahoo.com/', 'https://saham.alynne.my.id/yahoo-proxy/');
+        }
+        if (u.includes('query1.finance.yahoo.com')) {
+            return u.replace('https://query1.finance.yahoo.com/', 'https://saham.alynne.my.id/yahoo-v1/');
+        }
+        return null;
+    }, wrap: null, conditional: true },
+    // allorigins (sometimes works - fallback kalau self-hosted gagal)
     { name: 'allorigins-get', fn: (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: 'json' },
     { name: 'allorigins-raw', fn: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`, wrap: null },
     { name: 'codetabs', fn: (u) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`, wrap: null },
