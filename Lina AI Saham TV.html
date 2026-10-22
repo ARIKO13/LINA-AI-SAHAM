@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Version stamp untuk debugging - cek apakah browser pakai versi terbaru -->
-    <meta name="version" content="v14-2026-10-22">
-    <meta name="description" content="Lina AI - 61 saham (8 crypto + 12 US + 41 IDX) + lot calculation (v14)">
-    <title>Lina AI v14 - Analisis Saham + Rekomendasi + Backtest + Portfolio</title>
+    <meta name="version" content="v15-2026-10-22">
+    <meta name="description" content="Lina AI - Custom symbols tak terbatas + lot calculation (v15)">
+    <title>Lina AI v15 - Analisis Saham + Rekomendasi + Backtest + Portfolio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -834,8 +834,22 @@
                     <option value="5" selected>5 Saham</option>
                     <option value="8">8 Saham</option>
                     <option value="10">10 Saham</option>
+                    <option value="15">15 Saham</option>
+                    <option value="20">20 Saham</option>
                 </select>
             </div>
+        </div>
+
+        <!-- Custom Symbols Input (TAK TERBATAS) -->
+        <div class="mt-4">
+            <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">🔎 Custom Symbols (opsional - tak terbatas)</label>
+            <textarea id="recCustomSymbols" rows="2" placeholder="Kosongkan untuk scan dari daftar di atas. Atau ketik symbol sendiri, pisahkan dengan koma.&#10;Contoh: BUMI.JK, ANTM.JK, INCO.JK, MDKA.JK  atau  AAPL, MSFT, TSLA  atau  BTC-USD, ETH-USD"
+                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 font-mono"></textarea>
+            <p class="text-[10px] text-gray-500 mt-1">
+                💡 Kalau diisi, sistem hanya scan symbol yang kamu input (bisa ratusan, tak terbatas).
+                Format: <code>BUMI.JK, ANTM.JK</code> (IDX) atau <code>AAPL, MSFT</code> (US) atau <code>BTC-USD</code> (crypto).
+                Market auto-detect dari suffix (.JK = IDX, -USD = crypto, lainnya = US).
+            </p>
         </div>
 
         <!-- Strategy Info -->
@@ -4177,6 +4191,7 @@ async function scanRekomendasi() {
     const risk = document.getElementById('recRisk').value;
     const marketFilter = document.getElementById('recMarket').value;
     const maxStocks = parseInt(document.getElementById('recMaxStocks').value);
+    const customSymbolsRaw = document.getElementById('recCustomSymbols').value.trim();
 
     if (!modal || modal < 1) {
         alert('Modal harus lebih dari 0');
@@ -4195,11 +4210,40 @@ async function scanRekomendasi() {
 
     // Determine symbols to scan
     let symbolsToScan = [];
-    SCREENER_SYMBOLS.forEach(s => {
-        if (marketFilter === 'ALL' || s.market === marketFilter) {
-            symbolsToScan.push(s);
+
+    if (customSymbolsRaw) {
+        // ===== CUSTOM SYMBOLS MODE - tak terbatas =====
+        // Parse user input: split by comma/newline/space
+        const rawSymbols = customSymbolsRaw.split(/[\s,]+/).filter(s => s.trim());
+        for (const raw of rawSymbols) {
+            const sym = raw.trim().toUpperCase();
+            if (!sym) continue;
+            // Auto-detect market dari suffix
+            let market, unified;
+            if (sym.endsWith('.JK')) {
+                market = 'IDX';
+                unified = sym.replace('.JK', '');
+            } else if (sym.endsWith('-USD')) {
+                market = 'CRYPTO';
+                unified = sym.replace('-USD', 'USD');
+            } else if (sym.endsWith('USD') && sym.length > 3) {
+                // BTCUSD, ETHUSD, dll → crypto
+                market = 'CRYPTO';
+                unified = sym;
+            } else {
+                market = 'NASDAQ';
+                unified = sym;
+            }
+            symbolsToScan.push({ market, unified, name: sym });
         }
-    });
+    } else {
+        // ===== DEFAULT MODE - scan dari SCREENER_SYMBOLS =====
+        SCREENER_SYMBOLS.forEach(s => {
+            if (marketFilter === 'ALL' || s.market === marketFilter) {
+                symbolsToScan.push(s);
+            }
+        });
+    }
 
     setRecProgress(10, `Scanning ${symbolsToScan.length} saham...`);
 
@@ -5154,6 +5198,7 @@ document.getElementById('recClearBtn').addEventListener('click', () => {
     document.getElementById('recRisk').value = 'moderat';
     document.getElementById('recMarket').value = 'ALL';
     document.getElementById('recMaxStocks').value = '5';
+    document.getElementById('recCustomSymbols').value = '';
     document.getElementById('recProgress').classList.add('hidden');
     document.getElementById('recSummary').classList.add('hidden');
     document.getElementById('recResults').classList.add('hidden');
