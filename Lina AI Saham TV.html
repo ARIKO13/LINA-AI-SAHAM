@@ -48,19 +48,23 @@
 </head>
 <body class="min-h-screen">
 
-<!-- ============ NAVBAR (NEW - v10) ============ -->
+<!-- ============ NAVBAR (v12 - 6 pages) ============ -->
 <nav class="sticky top-0 z-[60] bg-[#0a0e17] border-b border-gray-800 shadow-lg">
-    <div class="max-w-[1800px] mx-auto px-4 py-2 flex items-center gap-4">
+    <div class="max-w-[1800px] mx-auto px-4 py-2 flex items-center gap-2 flex-wrap">
         <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center font-bold text-sm text-white">L</div>
-            <span class="text-sm font-bold text-white">Lina AI</span>
+            <span class="text-sm font-bold text-white hidden sm:inline">Lina AI</span>
         </div>
-        <div class="flex items-center gap-1 ml-4">
-            <a href="#/analisis" data-route="analisis" class="nav-link active px-3 py-1.5 text-xs font-semibold rounded-lg transition bg-blue-600 text-white">📈 Analisis</a>
-            <a href="#/rekomendasi" data-route="rekomendasi" class="nav-link px-3 py-1.5 text-xs font-semibold rounded-lg transition text-gray-400 hover:text-white hover:bg-gray-800">🎯 Rekomendasi Modal</a>
+        <div class="flex items-center gap-1 ml-2 flex-wrap">
+            <a href="#/analisis" data-route="analisis" class="nav-link active px-2.5 py-1.5 text-xs font-semibold rounded-lg transition bg-blue-600 text-white whitespace-nowrap">📈 Analisis</a>
+            <a href="#/rekomendasi" data-route="rekomendasi" class="nav-link px-2.5 py-1.5 text-xs font-semibold rounded-lg transition text-gray-400 hover:text-white hover:bg-gray-800 whitespace-nowrap">🎯 Rekomendasi</a>
+            <a href="#/backtest" data-route="backtest" class="nav-link px-2.5 py-1.5 text-xs font-semibold rounded-lg transition text-gray-400 hover:text-white hover:bg-gray-800 whitespace-nowrap">📊 Backtest</a>
+            <a href="#/portfolio" data-route="portfolio" class="nav-link px-2.5 py-1.5 text-xs font-semibold rounded-lg transition text-gray-400 hover:text-white hover:bg-gray-800 whitespace-nowrap">💼 Portfolio</a>
+            <a href="#/watchlist" data-route="watchlist" class="nav-link px-2.5 py-1.5 text-xs font-semibold rounded-lg transition text-gray-400 hover:text-white hover:bg-gray-800 whitespace-nowrap">⭐ Watchlist</a>
+            <a href="#/alerts" data-route="alerts" class="nav-link px-2.5 py-1.5 text-xs font-semibold rounded-lg transition text-gray-400 hover:text-white hover:bg-gray-800 whitespace-nowrap">🔔 Alerts</a>
         </div>
         <div class="ml-auto text-[10px] text-gray-600">
-            <span id="navVersion">v10</span>
+            <span id="navVersion">v12</span>
         </div>
     </div>
 </nav>
@@ -929,6 +933,416 @@
 
 </main>
 </div><!-- /page-rekomendasi -->
+
+<!-- ============ PAGE: BACKTEST (v12 - NEW) ============ -->
+<div id="page-backtest" class="page-content hidden">
+<main class="max-w-[1400px] mx-auto p-4 space-y-6">
+    <section class="bg-gradient-to-br from-[#0d1320] to-[#1a2332] rounded-xl border border-gray-800 p-6">
+        <h1 class="text-2xl font-bold text-white mb-2">📊 Backtest Strategi</h1>
+        <p class="text-sm text-gray-400">
+            Test strategi trading dengan data historis. Lihat performa: total return, win rate, max drawdown, dll.
+            Bandingkan dengan strategi Buy & Hold.
+        </p>
+    </section>
+
+    <section class="bg-[#0d1320] rounded-xl border border-gray-800 p-6">
+        <h2 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">📋 Konfigurasi Backtest</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">📈 Saham</label>
+                <select id="btSymbol" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="AAPL">AAPL (Apple)</option>
+                    <option value="TSLA">TSLA (Tesla)</option>
+                    <option value="NVDA">NVDA (NVIDIA)</option>
+                    <option value="BBCA.JK">BBCA (Bank BCA)</option>
+                    <option value="BBRI.JK">BBRI (Bank BRI)</option>
+                    <option value="BTC-USD">BTC-USD (Bitcoin)</option>
+                    <option value="ETH-USD">ETH-USD (Ethereum)</option>
+                    <option value="custom">Custom (input sendiri)</option>
+                </select>
+                <input type="text" id="btCustomSymbol" placeholder="cth: MSFT, AMZN, GOTO.JK" class="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm hidden focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">⏱️ Periode</label>
+                <select id="btPeriod" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="6mo">6 Bulan</option>
+                    <option value="1y" selected>1 Tahun</option>
+                    <option value="2y">2 Tahun</option>
+                    <option value="5y">5 Tahun</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">🎯 Strategi</label>
+                <select id="btStrategy" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="ema_cross">EMA Crossover (50/200)</option>
+                    <option value="rsi_oversold">RSI Oversold (<30)</option>
+                    <option value="macd_cross">MACD Crossover</option>
+                    <option value="bb_bounce">Bollinger Bands Bounce</option>
+                    <option value="buy_hold" selected>Buy & Hold (baseline)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">💰 Modal Awal</label>
+                <input type="number" id="btCapital" value="10000" min="1" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">📊 Position Size</label>
+                <select id="btPositionSize" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="100" selected>100% (all-in)</option>
+                    <option value="50">50% per trade</option>
+                    <option value="25">25% per trade</option>
+                    <option value="10">10% per trade</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">💸 Fee per Trade (%)</label>
+                <input type="number" id="btFee" value="0.1" step="0.01" min="0" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+            </div>
+        </div>
+        <div class="mt-4 flex gap-2">
+            <button id="btRunBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 rounded-lg text-sm font-bold transition">▶️ Run Backtest</button>
+            <button id="btClearBtn" class="bg-gray-700 hover:bg-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium transition">Reset</button>
+        </div>
+    </section>
+
+    <section id="btProgress" class="hidden bg-[#0d1320] rounded-xl border border-gray-800 p-6">
+        <div class="flex items-center gap-3">
+            <div class="inline-block w-6 h-6 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin"></div>
+            <span id="btProgressText" class="text-sm text-gray-400">Memulai backtest...</span>
+        </div>
+    </section>
+
+    <!-- Results -->
+    <section id="btResults" class="hidden space-y-4">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+                <div class="text-[10px] text-gray-500 uppercase">Total Return</div>
+                <div id="btTotalReturn" class="text-lg font-bold text-emerald-400">—</div>
+            </div>
+            <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+                <div class="text-[10px] text-gray-500 uppercase">Win Rate</div>
+                <div id="btWinRate" class="text-lg font-bold text-blue-400">—</div>
+            </div>
+            <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+                <div class="text-[10px] text-gray-500 uppercase">Total Trades</div>
+                <div id="btTotalTrades" class="text-lg font-bold text-white">—</div>
+            </div>
+            <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+                <div class="text-[10px] text-gray-500 uppercase">Max Drawdown</div>
+                <div id="btMaxDD" class="text-lg font-bold text-red-400">—</div>
+            </div>
+            <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+                <div class="text-[10px] text-gray-500 uppercase">Sharpe Ratio</div>
+                <div id="btSharpe" class="text-lg font-bold text-yellow-400">—</div>
+            </div>
+            <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+                <div class="text-[10px] text-gray-500 uppercase">Final Equity</div>
+                <div id="btFinalEquity" class="text-lg font-bold text-white">—</div>
+            </div>
+        </div>
+
+        <!-- Equity Curve Chart -->
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+            <h3 class="text-sm font-semibold text-gray-300 mb-3">📈 Equity Curve vs Buy & Hold</h3>
+            <div id="btEquityChart" style="height: 400px;"></div>
+        </div>
+
+        <!-- Trades Table -->
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden">
+            <div class="px-4 py-2.5 border-b border-gray-800">
+                <h3 class="text-sm font-semibold text-gray-300">📋 Trade History</h3>
+            </div>
+            <div class="overflow-x-auto max-h-96 overflow-y-auto scroll-thin">
+                <table class="w-full text-xs">
+                    <thead class="sticky top-0 bg-[#0d1320]">
+                        <tr class="text-gray-500 border-b border-gray-800">
+                            <th class="text-left px-3 py-2 font-medium">#</th>
+                            <th class="text-left px-3 py-2 font-medium">Type</th>
+                            <th class="text-left px-3 py-2 font-medium">Date</th>
+                            <th class="text-right px-3 py-2 font-medium">Price</th>
+                            <th class="text-right px-3 py-2 font-medium">Shares</th>
+                            <th class="text-right px-3 py-2 font-medium">P&L</th>
+                        </tr>
+                    </thead>
+                    <tbody id="btTradesBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-yellow-900/20 border border-yellow-700/30 rounded-xl p-4 text-xs text-yellow-300">
+        <p class="font-semibold mb-1">⚠️ Disclaimer</p>
+        <p>Hasil backtest bukan jaminan performa masa depan. Past performance is not indicative of future results.</p>
+    </section>
+</main>
+</div><!-- /page-backtest -->
+
+<!-- ============ PAGE: PORTFOLIO (v12 - NEW) ============ -->
+<div id="page-portfolio" class="page-content hidden">
+<main class="max-w-[1400px] mx-auto p-4 space-y-6">
+    <section class="bg-gradient-to-br from-[#0d1320] to-[#1a2332] rounded-xl border border-gray-800 p-6">
+        <h1 class="text-2xl font-bold text-white mb-2">💼 Portfolio Tracker</h1>
+        <p class="text-sm text-gray-400">
+            Masukkan saham yang kamu pegang + alokasi. Lina AI akan monitor performa real-time,
+            hitung total value, P&L, dan rekomendasi rebalancing.
+        </p>
+    </section>
+
+    <!-- Add Position Form -->
+    <section class="bg-[#0d1320] rounded-xl border border-gray-800 p-6">
+        <h2 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">➕ Tambah Posisi</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Symbol</label>
+                <input type="text" id="pfSymbol" placeholder="AAPL" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 uppercase">
+            </div>
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Market</label>
+                <select id="pfMarket" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="NASDAQ">NASDAQ</option>
+                    <option value="IDX">IDX</option>
+                    <option value="CRYPTO">Crypto</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Jumlah Shares</label>
+                <input type="number" id="pfShares" placeholder="10" min="0" step="0.001" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Harga Beli</label>
+                <input type="number" id="pfBuyPrice" placeholder="150" min="0" step="0.01" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+            </div>
+            <div class="flex items-end">
+                <button id="pfAddBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm font-bold transition">Tambah</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio Summary -->
+    <section id="pfSummary" class="hidden grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+            <div class="text-[10px] text-gray-500 uppercase">Total Invested</div>
+            <div id="pfTotalInvested" class="text-lg font-bold text-white">—</div>
+        </div>
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+            <div class="text-[10px] text-gray-500 uppercase">Current Value</div>
+            <div id="pfCurrentValue" class="text-lg font-bold text-blue-400">—</div>
+        </div>
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+            <div class="text-[10px] text-gray-500 uppercase">Total P&L</div>
+            <div id="pfTotalPnL" class="text-lg font-bold text-emerald-400">—</div>
+        </div>
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+            <div class="text-[10px] text-gray-500 uppercase">Return %</div>
+            <div id="pfReturnPct" class="text-lg font-bold text-yellow-400">—</div>
+        </div>
+    </section>
+
+    <!-- Positions Table -->
+    <section class="bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden">
+        <div class="px-4 py-2.5 border-b border-gray-800 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-gray-300">📋 Posisi Portfolio</h2>
+            <div class="flex gap-2">
+                <button id="pfRefreshBtn" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition">🔄 Refresh</button>
+                <button id="pfExportBtn" class="text-xs bg-gray-700 hover:bg-blue-600 text-gray-200 px-3 py-1 rounded transition">⬇ Export</button>
+                <button id="pfClearBtn" class="text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1 rounded transition">🗑️ Clear All</button>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead class="bg-gray-800/40">
+                    <tr class="text-gray-500 border-b border-gray-700">
+                        <th class="text-left px-3 py-2.5 font-medium">Symbol</th>
+                        <th class="text-left px-3 py-2.5 font-medium">Market</th>
+                        <th class="text-right px-3 py-2.5 font-medium">Shares</th>
+                        <th class="text-right px-3 py-2.5 font-medium">Buy Price</th>
+                        <th class="text-right px-3 py-2.5 font-medium">Current Price</th>
+                        <th class="text-right px-3 py-2.5 font-medium">Value</th>
+                        <th class="text-right px-3 py-2.5 font-medium">P&L</th>
+                        <th class="text-center px-3 py-2.5 font-medium">Signal</th>
+                        <th class="text-center px-3 py-2.5 font-medium">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="pfPositionsBody">
+                    <tr><td colspan="9" class="text-center py-8 text-gray-600">Belum ada posisi. Tambahkan di atas.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="bg-yellow-900/20 border border-yellow-700/30 rounded-xl p-4 text-xs text-yellow-300">
+        <p class="font-semibold mb-1">💡 Tips</p>
+        <p>Portfolio disimpan di browser (localStorage). Refresh harga otomatis tiap kali buka page.
+        Klik "Refresh" untuk update manual. Klik symbol untuk analisis detail.</p>
+    </section>
+</main>
+</div><!-- /page-portfolio -->
+
+<!-- ============ PAGE: WATCHLIST (v12 - NEW) ============ -->
+<div id="page-watchlist" class="page-content hidden">
+<main class="max-w-[1400px] mx-auto p-4 space-y-6">
+    <section class="bg-gradient-to-br from-[#0d1320] to-[#1a2332] rounded-xl border border-gray-800 p-6">
+        <h1 class="text-2xl font-bold text-white mb-2">⭐ Custom Watchlist</h1>
+        <p class="text-sm text-gray-400">
+            Tambahkan saham favorit kamu. Lina AI akan scan sinyal teknikal untuk semua saham di watchlist.
+            Simpan di browser (localStorage).
+        </p>
+    </section>
+
+    <!-- Add Symbol -->
+    <section class="bg-[#0d1320] rounded-xl border border-gray-800 p-6">
+        <h2 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">➕ Tambah Saham</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Symbol</label>
+                <input type="text" id="wlSymbol" placeholder="AAPL" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 uppercase">
+            </div>
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Market</label>
+                <select id="wlMarket" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="NASDAQ">NASDAQ</option>
+                    <option value="IDX">IDX</option>
+                    <option value="CRYPTO">Crypto</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Nama (opsional)</label>
+                <input type="text" id="wlName" placeholder="Apple Inc" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+            </div>
+            <div class="flex items-end">
+                <button id="wlAddBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm font-bold transition">⭐ Tambah</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Actions -->
+    <section class="bg-[#0d1320] rounded-xl border border-gray-800 p-4 flex items-center justify-between">
+        <div class="text-xs text-gray-400">
+            <span id="wlCount">0</span> saham di watchlist
+        </div>
+        <div class="flex gap-2">
+            <button id="wlScanBtn" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded transition">🔄 Scan Sinyal</button>
+            <button id="wlClearBtn" class="text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded transition">🗑️ Clear All</button>
+        </div>
+    </section>
+
+    <!-- Watchlist Table -->
+    <section class="bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead class="bg-gray-800/40">
+                    <tr class="text-gray-500 border-b border-gray-700">
+                        <th class="text-left px-3 py-2.5 font-medium">Symbol</th>
+                        <th class="text-left px-3 py-2.5 font-medium">Market</th>
+                        <th class="text-right px-3 py-2.5 font-medium">Price</th>
+                        <th class="text-right px-3 py-2.5 font-medium">Tech Score</th>
+                        <th class="text-center px-3 py-2.5 font-medium">Signal</th>
+                        <th class="text-left px-3 py-2.5 font-medium">Reasons</th>
+                        <th class="text-center px-3 py-2.5 font-medium">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="wlBody">
+                    <tr><td colspan="7" class="text-center py-8 text-gray-600">Belum ada saham di watchlist.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</div><!-- /page-watchlist -->
+
+<!-- ============ PAGE: ALERTS (v12 - NEW) ============ -->
+<div id="page-alerts" class="page-content hidden">
+<main class="max-w-[1400px] mx-auto p-4 space-y-6">
+    <section class="bg-gradient-to-br from-[#0d1320] to-[#1a2332] rounded-xl border border-gray-800 p-6">
+        <h1 class="text-2xl font-bold text-white mb-2">🔔 Alert Notifications</h1>
+        <p class="text-sm text-gray-400">
+            Set alert untuk saham tertentu. Lina AI akan cek berkala dan notifikasi browser
+            kalau signal berubah (BUY/SELL/HOLD). <strong>Browser harus tetap terbuka</strong>.
+        </p>
+    </section>
+
+    <!-- Add Alert -->
+    <section class="bg-[#0d1320] rounded-xl border border-gray-800 p-6">
+        <h2 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">➕ Tambah Alert</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Symbol</label>
+                <input type="text" id="alSymbol" placeholder="AAPL" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 uppercase">
+            </div>
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Market</label>
+                <select id="alMarket" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="NASDAQ">NASDAQ</option>
+                    <option value="IDX">IDX</option>
+                    <option value="CRYPTO">Crypto</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[10px] font-semibold text-gray-400 uppercase mb-1">Trigger Signal</label>
+                <select id="alSignal" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="ANY">Any Change (signal berubah)</option>
+                    <option value="BUY">BUY / STRONG BUY</option>
+                    <option value="SELL">SELL / STRONG SELL</option>
+                    <option value="HOLD">HOLD</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button id="alAddBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm font-bold transition">🔔 Set Alert</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="bg-[#0d1320] rounded-xl border border-gray-800 p-4 flex items-center justify-between">
+        <div>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="alEnabled" class="rounded bg-gray-800 border-gray-700 text-emerald-500 focus:ring-emerald-500">
+                <span class="text-sm text-gray-300">Enable Alerts (browser notification)</span>
+            </label>
+            <p class="text-[10px] text-gray-500 mt-1 ml-6">Cek interval: tiap 5 menit</p>
+        </div>
+        <div class="text-xs text-gray-400">
+            <span id="alCount">0</span> alerts aktif
+        </div>
+    </section>
+
+    <!-- Alert Log -->
+    <section class="bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden">
+        <div class="px-4 py-2.5 border-b border-gray-800 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-gray-300">📋 Active Alerts</h2>
+            <button id="alClearBtn" class="text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1 rounded transition">🗑️ Clear All</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead class="bg-gray-800/40">
+                    <tr class="text-gray-500 border-b border-gray-700">
+                        <th class="text-left px-3 py-2.5 font-medium">Symbol</th>
+                        <th class="text-left px-3 py-2.5 font-medium">Market</th>
+                        <th class="text-center px-3 py-2.5 font-medium">Trigger</th>
+                        <th class="text-center px-3 py-2.5 font-medium">Current Signal</th>
+                        <th class="text-left px-3 py-2.5 font-medium">Last Check</th>
+                        <th class="text-center px-3 py-2.5 font-medium">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="alBody">
+                    <tr><td colspan="6" class="text-center py-8 text-gray-600">Belum ada alert.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Notification Log -->
+    <section class="bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden">
+        <div class="px-4 py-2.5 border-b border-gray-800">
+            <h2 class="text-sm font-semibold text-gray-300">📨 Notification Log</h2>
+        </div>
+        <div id="alLog" class="p-3 space-y-2 max-h-80 overflow-y-auto scroll-thin">
+            <p class="text-xs text-gray-600 text-center py-4">Belum ada notifikasi terkirim</p>
+        </div>
+    </section>
+</main>
+</div><!-- /page-alerts -->
 
 <footer class="text-center py-4 text-xs text-gray-600">
     <p>Lina AI — Analisis Teknikal + Fundamental + Berita | Pemula Friendly</p>
@@ -3930,6 +4344,619 @@ document.getElementById('recExportBtn').addEventListener('click', () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 });
+
+// ═══════════════════════════════════════════════════════════
+//  BACKTEST ENGINE (v12)
+// ═══════════════════════════════════════════════════════════
+
+let btEquityChartInstance = null;
+
+document.getElementById('btSymbol').addEventListener('change', (e) => {
+    const customInput = document.getElementById('btCustomSymbol');
+    if (e.target.value === 'custom') {
+        customInput.classList.remove('hidden');
+    } else {
+        customInput.classList.add('hidden');
+    }
+});
+
+async function runBacktest() {
+    let symbol = document.getElementById('btSymbol').value;
+    if (symbol === 'custom') {
+        symbol = document.getElementById('btCustomSymbol').value.trim().toUpperCase();
+        if (!symbol) { alert('Masukkan symbol custom'); return; }
+    }
+    const period = document.getElementById('btPeriod').value;
+    const strategy = document.getElementById('btStrategy').value;
+    const capital = parseFloat(document.getElementById('btCapital').value);
+    const positionSize = parseInt(document.getElementById('btPositionSize').value) / 100;
+    const feePct = parseFloat(document.getElementById('btFee').value) / 100;
+
+    document.getElementById('btProgress').classList.remove('hidden');
+    document.getElementById('btResults').classList.add('hidden');
+    document.getElementById('btProgressText').textContent = `Fetching ${symbol} historical data...`;
+
+    try {
+        const { candles } = await fetchYahooChart(symbol, '1d', period);
+        if (candles.length < 50) throw new Error('Data tidak cukup');
+
+        document.getElementById('btProgressText').textContent = `Running backtest (${candles.length} candles)...`;
+        await new Promise(r => setTimeout(r, 200));
+
+        const result = executeBacktest(candles, strategy, capital, positionSize, feePct);
+        renderBacktestResults(result, candles, symbol, strategy);
+    } catch (e) {
+        alert('Backtest error: ' + e.message);
+    } finally {
+        document.getElementById('btProgress').classList.add('hidden');
+    }
+}
+
+function executeBacktest(candles, strategy, capital, positionSize, feePct) {
+    const closes = candles.map(c => c.close);
+    const ema50 = calculateEMA(closes, 50);
+    const ema200 = calculateEMA(closes, 200);
+    const rsi = calculateRSI(closes, 14);
+    const macd = calculateMACD(closes);
+    const bb = calculateBB(closes, 20, 2);
+
+    let equity = capital;
+    let shares = 0;
+    let trades = [];
+    let equityCurve = [];
+    let peakEquity = capital;
+    let maxDD = 0;
+    let wins = 0, losses = 0;
+    let buyPrice = 0;
+    let inPosition = false;
+
+    for (let i = 200; i < candles.length; i++) {
+        const price = closes[i];
+        let signal = 'HOLD';
+
+        // Generate signals based on strategy
+        if (strategy === 'ema_cross') {
+            if (ema50[i] !== null && ema200[i] !== null) {
+                if (ema50[i] > ema200[i] && !inPosition) signal = 'BUY';
+                else if (ema50[i] < ema200[i] && inPosition) signal = 'SELL';
+            }
+        } else if (strategy === 'rsi_oversold') {
+            if (rsi[i] !== null) {
+                if (rsi[i] < 30 && !inPosition) signal = 'BUY';
+                else if (rsi[i] > 70 && inPosition) signal = 'SELL';
+            }
+        } else if (strategy === 'macd_cross') {
+            if (macd.macdLine[i] !== null && macd.signalLine[i] !== null) {
+                if (macd.macdLine[i] > macd.signalLine[i] && !inPosition) signal = 'BUY';
+                else if (macd.macdLine[i] < macd.signalLine[i] && inPosition) signal = 'SELL';
+            }
+        } else if (strategy === 'bb_bounce') {
+            if (bb.upper[i] !== null && bb.lower[i] !== null) {
+                if (price < bb.lower[i] && !inPosition) signal = 'BUY';
+                else if (price > bb.upper[i] && inPosition) signal = 'SELL';
+            }
+        } else if (strategy === 'buy_hold') {
+            if (i === 200) signal = 'BUY';
+            // Never sell
+        }
+
+        // Execute trade
+        if (signal === 'BUY' && !inPosition) {
+            const investAmount = equity * positionSize;
+            const fee = investAmount * feePct;
+            shares = (investAmount - fee) / price;
+            equity -= investAmount;
+            buyPrice = price;
+            inPosition = true;
+            trades.push({ type: 'BUY', date: new Date(candles[i].time * 1000), price, shares, pnl: null });
+        } else if (signal === 'SELL' && inPosition) {
+            const proceeds = shares * price;
+            const fee = proceeds * feePct;
+            const pnl = (proceeds - fee) - (shares * buyPrice);
+            equity += proceeds - fee;
+            if (pnl > 0) wins++; else losses++;
+            trades.push({ type: 'SELL', date: new Date(candles[i].time * 1000), price, shares, pnl });
+            shares = 0;
+            inPosition = false;
+        }
+
+        // Track equity
+        const totalEquity = equity + (shares * price);
+        equityCurve.push({ time: candles[i].time, equity: totalEquity, buyHold: capital * (price / closes[200]) });
+        if (totalEquity > peakEquity) peakEquity = totalEquity;
+        const dd = (peakEquity - totalEquity) / peakEquity * 100;
+        if (dd > maxDD) maxDD = dd;
+    }
+
+    // Close position at end
+    if (inPosition) {
+        const lastPrice = closes[closes.length - 1];
+        const proceeds = shares * lastPrice;
+        const fee = proceeds * feePct;
+        const pnl = (proceeds - fee) - (shares * buyPrice);
+        equity += proceeds - fee;
+        if (pnl > 0) wins++; else losses++;
+        trades.push({ type: 'SELL', date: new Date(candles[candles.length - 1].time * 1000), price: lastPrice, shares, pnl });
+        shares = 0;
+    }
+
+    const finalEquity = equity;
+    const totalReturn = ((finalEquity - capital) / capital) * 100;
+    const totalTrades = wins + losses;
+    const winRate = totalTrades > 0 ? (wins / totalTrades) * 100 : 0;
+
+    // Sharpe ratio (simplified: annualized)
+    const returns = [];
+    for (let i = 1; i < equityCurve.length; i++) {
+        returns.push((equityCurve[i].equity - equityCurve[i-1].equity) / equityCurve[i-1].equity);
+    }
+    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+    const stdReturn = Math.sqrt(returns.reduce((a, b) => a + Math.pow(b - avgReturn, 2), 0) / returns.length);
+    const sharpe = stdReturn > 0 ? (avgReturn / stdReturn) * Math.sqrt(252) : 0;
+
+    return { finalEquity, totalReturn, totalTrades, winRate, maxDD, sharpe, trades, equityCurve, wins, losses };
+}
+
+function renderBacktestResults(result, candles, symbol, strategy) {
+    document.getElementById('btResults').classList.remove('hidden');
+
+    document.getElementById('btTotalReturn').textContent = (result.totalReturn >= 0 ? '+' : '') + result.totalReturn.toFixed(2) + '%';
+    document.getElementById('btTotalReturn').className = 'text-lg font-bold ' + (result.totalReturn >= 0 ? 'text-emerald-400' : 'text-red-400');
+    document.getElementById('btWinRate').textContent = result.winRate.toFixed(1) + '%';
+    document.getElementById('btTotalTrades').textContent = result.totalTrades;
+    document.getElementById('btMaxDD').textContent = '-' + result.maxDD.toFixed(2) + '%';
+    document.getElementById('btSharpe').textContent = result.sharpe.toFixed(2);
+    document.getElementById('btFinalEquity').textContent = '$' + result.finalEquity.toFixed(2);
+
+    // Equity curve chart
+    const chartContainer = document.getElementById('btEquityChart');
+    if (btEquityChartInstance) btEquityChartInstance.remove();
+    btEquityChartInstance = LightweightCharts.createChart(chartContainer, {
+        width: chartContainer.clientWidth, height: 400,
+        layout: { background: { color: '#0d1320' }, textColor: '#9ca3af', fontSize: 10 },
+        grid: { vertLines: { color: 'rgba(55,65,81,0.3)' }, horzLines: { color: 'rgba(55,65,81,0.3)' } },
+        rightPriceScale: { borderColor: 'rgba(55,65,81,0.5)' },
+        timeScale: { borderColor: 'rgba(55,65,81,0.5)', timeVisible: true }
+    });
+    const equitySeries = btEquityChartInstance.addLineSeries({ color: '#3b82f6', lineWidth: 2, title: 'Strategy' });
+    const buyHoldSeries = btEquityChartInstance.addLineSeries({ color: '#9ca3af', lineWidth: 1, lineStyle: 2, title: 'Buy & Hold' });
+    equitySeries.setData(result.equityCurve.map(e => ({ time: e.time, value: e.equity })));
+    buyHoldSeries.setData(result.equityCurve.map(e => ({ time: e.time, value: e.buyHold })));
+    btEquityChartInstance.timeScale().fitContent();
+    new ResizeObserver(() => { if (btEquityChartInstance && chartContainer.clientWidth > 0) btEquityChartInstance.applyOptions({ width: chartContainer.clientWidth }); }).observe(chartContainer);
+
+    // Trades table
+    const tbody = document.getElementById('btTradesBody');
+    tbody.innerHTML = result.trades.map((t, i) => {
+        const pnlStr = t.pnl !== null ? (t.pnl >= 0 ? '+' : '') + '$' + t.pnl.toFixed(2) : '—';
+        const pnlColor = t.pnl !== null ? (t.pnl >= 0 ? 'text-emerald-400' : 'text-red-400') : 'text-gray-500';
+        const typeColor = t.type === 'BUY' ? 'text-emerald-400' : 'text-red-400';
+        return `<tr class="border-b border-gray-800/30">
+            <td class="px-3 py-2 text-gray-500">${i + 1}</td>
+            <td class="px-3 py-2 font-semibold ${typeColor}">${t.type}</td>
+            <td class="px-3 py-2 text-gray-300">${t.date.toLocaleDateString('id-ID')}</td>
+            <td class="text-right px-3 py-2 text-gray-300">$${t.price.toFixed(2)}</td>
+            <td class="text-right px-3 py-2 text-gray-300">${t.shares.toFixed(4)}</td>
+            <td class="text-right px-3 py-2 ${pnlColor} font-semibold">${pnlStr}</td>
+        </tr>`;
+    }).join('');
+}
+
+document.getElementById('btRunBtn').addEventListener('click', runBacktest);
+document.getElementById('btClearBtn').addEventListener('click', () => {
+    document.getElementById('btSymbol').value = 'AAPL';
+    document.getElementById('btPeriod').value = '1y';
+    document.getElementById('btStrategy').value = 'buy_hold';
+    document.getElementById('btCapital').value = '10000';
+    document.getElementById('btPositionSize').value = '100';
+    document.getElementById('btFee').value = '0.1';
+    document.getElementById('btResults').classList.add('hidden');
+    document.getElementById('btCustomSymbol').classList.add('hidden');
+});
+
+// ═══════════════════════════════════════════════════════════
+//  PORTFOLIO TRACKER (v12)
+// ═══════════════════════════════════════════════════════════
+
+function getPortfolio() {
+    try { return JSON.parse(localStorage.getItem('lina_portfolio') || '[]'); } catch (e) { return []; }
+}
+function savePortfolio(p) { localStorage.setItem('lina_portfolio', JSON.stringify(p)); }
+
+document.getElementById('pfAddBtn').addEventListener('click', () => {
+    const symbol = document.getElementById('pfSymbol').value.trim().toUpperCase();
+    const market = document.getElementById('pfMarket').value;
+    const shares = parseFloat(document.getElementById('pfShares').value);
+    const buyPrice = parseFloat(document.getElementById('pfBuyPrice').value);
+    if (!symbol || !shares || !buyPrice) { alert('Lengkapi semua field'); return; }
+
+    const portfolio = getPortfolio();
+    portfolio.push({ id: Date.now(), symbol, market, shares, buyPrice, addedAt: new Date().toISOString() });
+    savePortfolio(portfolio);
+
+    document.getElementById('pfSymbol').value = '';
+    document.getElementById('pfShares').value = '';
+    document.getElementById('pfBuyPrice').value = '';
+    renderPortfolio();
+});
+
+async function refreshPortfolioPrices() {
+    const portfolio = getPortfolio();
+    if (portfolio.length === 0) return;
+    document.getElementById('pfPositionsBody').innerHTML = '<tr><td colspan="9" class="text-center py-4 text-gray-500">Refreshing prices...</td></tr>';
+
+    let totalInvested = 0, totalValue = 0;
+    const rows = [];
+    for (const pos of portfolio) {
+        try {
+            const mapped = mapSymbol(pos.market, pos.symbol);
+            const { candles } = await fetchYahooChart(mapped.yahoo, '1d', '5d');
+            const currentPrice = candles.length > 0 ? candles[candles.length - 1].close : pos.buyPrice;
+
+            // Get tech signal
+            let techSignal = '—', techScore = 0;
+            try {
+                const tech = analyzeTechnical(candles);
+                techSignal = tech.signal;
+                techScore = tech.score;
+            } catch (e) {}
+
+            const invested = pos.shares * pos.buyPrice;
+            const value = pos.shares * currentPrice;
+            const pnl = value - invested;
+            const pnlPct = (pnl / invested) * 100;
+            totalInvested += invested;
+            totalValue += value;
+
+            const sigColor = techSignal.includes('BUY') ? 'bg-green-700/50 text-green-400' :
+                            techSignal.includes('SELL') ? 'bg-red-700/50 text-red-400' :
+                            'bg-gray-700 text-gray-400';
+            const pnlColor = pnl >= 0 ? 'text-emerald-400' : 'text-red-400';
+
+            rows.push(`<tr class="border-b border-gray-800/30 hover:bg-gray-800/30 cursor-pointer" onclick="loadSymbolFromScreener('${pos.market}', '${pos.symbol}')">
+                <td class="px-3 py-2.5 font-semibold text-gray-200">${pos.symbol}</td>
+                <td class="px-3 py-2.5 text-gray-400">${pos.market}</td>
+                <td class="text-right px-3 py-2.5 text-gray-300">${pos.shares}</td>
+                <td class="text-right px-3 py-2.5 text-gray-300">$${pos.buyPrice.toFixed(2)}</td>
+                <td class="text-right px-3 py-2.5 text-gray-300">$${currentPrice.toFixed(2)}</td>
+                <td class="text-right px-3 py-2.5 font-bold text-blue-400">$${value.toFixed(2)}</td>
+                <td class="text-right px-3 py-2.5 font-bold ${pnlColor}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)} (${pnlPct.toFixed(1)}%)</td>
+                <td class="text-center px-3 py-2.5"><span class="px-1.5 py-0.5 rounded ${sigColor} text-[9px] font-semibold">${techSignal}</span></td>
+                <td class="text-center px-3 py-2.5"><button onclick="event.stopPropagation(); removePosition(${pos.id})" class="text-red-400 hover:text-red-300 text-xs">🗑️</button></td>
+            </tr>`);
+        } catch (e) {
+            rows.push(`<tr class="border-b border-gray-800/30">
+                <td class="px-3 py-2.5 font-semibold text-gray-200">${pos.symbol}</td>
+                <td colspan="7" class="px-3 py-2.5 text-red-400 text-xs">Error: ${e.message.substring(0, 40)}</td>
+                <td class="text-center px-3 py-2.5"><button onclick="removePosition(${pos.id})" class="text-red-400 hover:text-red-300 text-xs">🗑️</button></td>
+            </tr>`);
+        }
+    }
+    document.getElementById('pfPositionsBody').innerHTML = rows.join('') || '<tr><td colspan="9" class="text-center py-8 text-gray-600">Belum ada posisi.</td></tr>';
+
+    // Update summary
+    document.getElementById('pfSummary').classList.remove('hidden');
+    document.getElementById('pfTotalInvested').textContent = '$' + totalInvested.toFixed(2);
+    document.getElementById('pfCurrentValue').textContent = '$' + totalValue.toFixed(2);
+    const totalPnL = totalValue - totalInvested;
+    document.getElementById('pfTotalPnL').textContent = (totalPnL >= 0 ? '+' : '') + '$' + totalPnL.toFixed(2);
+    document.getElementById('pfTotalPnL').className = 'text-lg font-bold ' + (totalPnL >= 0 ? 'text-emerald-400' : 'text-red-400');
+    const retPct = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
+    document.getElementById('pfReturnPct').textContent = (retPct >= 0 ? '+' : '') + retPct.toFixed(2) + '%';
+}
+
+window.removePosition = function(id) {
+    let portfolio = getPortfolio();
+    portfolio = portfolio.filter(p => p.id !== id);
+    savePortfolio(portfolio);
+    renderPortfolio();
+};
+
+function renderPortfolio() {
+    const portfolio = getPortfolio();
+    if (portfolio.length === 0) {
+        document.getElementById('pfPositionsBody').innerHTML = '<tr><td colspan="9" class="text-center py-8 text-gray-600">Belum ada posisi. Tambahkan di atas.</td></tr>';
+        document.getElementById('pfSummary').classList.add('hidden');
+        return;
+    }
+    refreshPortfolioPrices();
+}
+
+document.getElementById('pfRefreshBtn').addEventListener('click', refreshPortfolioPrices);
+document.getElementById('pfClearBtn').addEventListener('click', () => {
+    if (confirm('Hapus semua posisi portfolio?')) {
+        localStorage.removeItem('lina_portfolio');
+        renderPortfolio();
+    }
+});
+document.getElementById('pfExportBtn').addEventListener('click', () => {
+    const portfolio = getPortfolio();
+    if (portfolio.length === 0) { alert('Portfolio kosong'); return; }
+    const csv = ['Symbol,Market,Shares,BuyPrice,AddedAt'];
+    portfolio.forEach(p => csv.push(`${p.symbol},${p.market},${p.shares},${p.buyPrice},${p.addedAt}`));
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'portfolio.csv';
+    a.click();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  CUSTOM WATCHLIST (v12)
+// ═══════════════════════════════════════════════════════════
+
+function getWatchlist() {
+    try { return JSON.parse(localStorage.getItem('lina_watchlist') || '[]'); } catch (e) { return []; }
+}
+function saveWatchlist(w) { localStorage.setItem('lina_watchlist', JSON.stringify(w)); }
+
+document.getElementById('wlAddBtn').addEventListener('click', () => {
+    const symbol = document.getElementById('wlSymbol').value.trim().toUpperCase();
+    const market = document.getElementById('wlMarket').value;
+    const name = document.getElementById('wlName').value.trim() || symbol;
+    if (!symbol) { alert('Masukkan symbol'); return; }
+
+    const wl = getWatchlist();
+    if (wl.find(w => w.symbol === symbol && w.market === market)) {
+        alert(`${symbol} sudah ada di watchlist`);
+        return;
+    }
+    wl.push({ id: Date.now(), symbol, market, name, addedAt: new Date().toISOString() });
+    saveWatchlist(wl);
+    document.getElementById('wlSymbol').value = '';
+    document.getElementById('wlName').value = '';
+    renderWatchlist();
+});
+
+async function scanWatchlist() {
+    const wl = getWatchlist();
+    if (wl.length === 0) { alert('Watchlist kosong'); return; }
+    document.getElementById('wlBody').innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">Scanning...</td></tr>';
+
+    const rows = [];
+    for (const item of wl) {
+        try {
+            const mapped = mapSymbol(item.market, item.symbol);
+            const { candles } = await fetchYahooChart(mapped.yahoo, '1d', '6mo');
+            if (candles.length < 50) throw new Error('Data tidak cukup');
+            const tech = analyzeTechnical(candles);
+            const price = candles[candles.length - 1].close;
+
+            const sigColor = tech.signal.includes('BUY') ? 'bg-green-700/50 text-green-400' :
+                            tech.signal.includes('SELL') ? 'bg-red-700/50 text-red-400' :
+                            'bg-gray-700 text-gray-400';
+            const reasons = tech.reasons.slice(0, 2).join(' • ');
+
+            rows.push(`<tr class="border-b border-gray-800/30 hover:bg-gray-800/30 cursor-pointer" onclick="loadSymbolFromScreener('${item.market}', '${item.symbol}')">
+                <td class="px-3 py-2.5 font-semibold text-gray-200">${item.symbol}<div class="text-[10px] text-gray-500">${item.name}</div></td>
+                <td class="px-3 py-2.5 text-gray-400">${item.market}</td>
+                <td class="text-right px-3 py-2.5 text-gray-300">$${price.toFixed(2)}</td>
+                <td class="text-right px-3 py-2.5 text-gray-300">${tech.score.toFixed(1)}</td>
+                <td class="text-center px-3 py-2.5"><span class="px-1.5 py-0.5 rounded ${sigColor} text-[9px] font-semibold">${tech.signal}</span></td>
+                <td class="px-3 py-2.5 text-[10px] text-gray-400 max-w-xs">${reasons}</td>
+                <td class="text-center px-3 py-2.5"><button onclick="event.stopPropagation(); removeWatchlist(${item.id})" class="text-red-400 hover:text-red-300 text-xs">🗑️</button></td>
+            </tr>`);
+        } catch (e) {
+            rows.push(`<tr class="border-b border-gray-800/30">
+                <td class="px-3 py-2.5 font-semibold text-gray-200">${item.symbol}</td>
+                <td colspan="5" class="px-3 py-2.5 text-red-400 text-xs">Error: ${e.message.substring(0, 40)}</td>
+                <td class="text-center px-3 py-2.5"><button onclick="removeWatchlist(${item.id})" class="text-red-400 hover:text-red-300 text-xs">🗑️</button></td>
+            </tr>`);
+        }
+    }
+    document.getElementById('wlBody').innerHTML = rows.join('');
+}
+
+window.removeWatchlist = function(id) {
+    let wl = getWatchlist();
+    wl = wl.filter(w => w.id !== id);
+    saveWatchlist(wl);
+    renderWatchlist();
+};
+
+function renderWatchlist() {
+    const wl = getWatchlist();
+    document.getElementById('wlCount').textContent = wl.length;
+    if (wl.length === 0) {
+        document.getElementById('wlBody').innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-600">Belum ada saham di watchlist.</td></tr>';
+        return;
+    }
+    // Render basic list first (without prices)
+    document.getElementById('wlBody').innerHTML = wl.map(item => `
+        <tr class="border-b border-gray-800/30 hover:bg-gray-800/30">
+            <td class="px-3 py-2.5 font-semibold text-gray-200">${item.symbol}<div class="text-[10px] text-gray-500">${item.name}</div></td>
+            <td class="px-3 py-2.5 text-gray-400">${item.market}</td>
+            <td colspan="4" class="px-3 py-2.5 text-gray-600 text-xs">Klik "Scan Sinyal" untuk update</td>
+            <td class="text-center px-3 py-2.5"><button onclick="removeWatchlist(${item.id})" class="text-red-400 hover:text-red-300 text-xs">🗑️</button></td>
+        </tr>
+    `).join('');
+}
+
+document.getElementById('wlScanBtn').addEventListener('click', scanWatchlist);
+document.getElementById('wlClearBtn').addEventListener('click', () => {
+    if (confirm('Hapus semua watchlist?')) {
+        localStorage.removeItem('lina_watchlist');
+        renderWatchlist();
+    }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  ALERT NOTIFICATIONS (v12)
+// ═══════════════════════════════════════════════════════════
+
+function getAlerts() {
+    try { return JSON.parse(localStorage.getItem('lina_alerts') || '[]'); } catch (e) { return []; }
+}
+function saveAlerts(a) { localStorage.setItem('lina_alerts', JSON.stringify(a)); }
+
+let alertInterval = null;
+
+document.getElementById('alAddBtn').addEventListener('click', () => {
+    const symbol = document.getElementById('alSymbol').value.trim().toUpperCase();
+    const market = document.getElementById('alMarket').value;
+    const triggerSignal = document.getElementById('alSignal').value;
+    if (!symbol) { alert('Masukkan symbol'); return; }
+
+    const alerts = getAlerts();
+    if (alerts.find(a => a.symbol === symbol && a.market === market)) {
+        alert(`Alert untuk ${symbol} sudah ada`);
+        return;
+    }
+    alerts.push({
+        id: Date.now(), symbol, market, triggerSignal,
+        lastSignal: null, lastCheck: null,
+        addedAt: new Date().toISOString()
+    });
+    saveAlerts(alerts);
+    document.getElementById('alSymbol').value = '';
+    renderAlerts();
+});
+
+window.removeAlert = function(id) {
+    let alerts = getAlerts();
+    alerts = alerts.filter(a => a.id !== id);
+    saveAlerts(alerts);
+    renderAlerts();
+};
+
+window.checkAlertNow = async function(id) {
+    const alerts = getAlerts();
+    const alert = alerts.find(a => a.id === id);
+    if (!alert) return;
+    try {
+        const mapped = mapSymbol(alert.market, alert.symbol);
+        const { candles } = await fetchYahooChart(mapped.yahoo, '1d', '6mo');
+        if (candles.length < 50) throw new Error('Data tidak cukup');
+        const tech = analyzeTechnical(candles);
+        const newSignal = tech.signal;
+        const oldSignal = alert.lastSignal;
+
+        // Check if trigger matches
+        let triggered = false;
+        if (alert.triggerSignal === 'ANY') {
+            triggered = oldSignal !== null && oldSignal !== newSignal;
+        } else if (alert.triggerSignal === 'BUY') {
+            triggered = newSignal.includes('BUY');
+        } else if (alert.triggerSignal === 'SELL') {
+            triggered = newSignal.includes('SELL');
+        } else if (alert.triggerSignal === 'HOLD') {
+            triggered = newSignal === 'HOLD';
+        }
+
+        // Update alert
+        alert.lastSignal = newSignal;
+        alert.lastCheck = new Date().toISOString();
+        saveAlerts(alerts);
+
+        if (triggered) {
+            addAlertNotification(alert, oldSignal, newSignal);
+            // Browser notification
+            if (window.alEnabled && 'Notification' in window && Notification.permission === 'granted') {
+                new Notification(`🔔 ${alert.symbol} Signal: ${newSignal}`, {
+                    body: `Triggered: ${alert.triggerSignal}\nOld: ${oldSignal || '—'} → New: ${newSignal}`,
+                    tag: alert.symbol,
+                    requireInteraction: true
+                });
+            }
+        }
+        renderAlerts();
+    } catch (e) {
+        console.log('Alert check error:', e.message);
+    }
+};
+
+function addAlertNotification(alert, oldSignal, newSignal) {
+    const log = document.getElementById('alLog');
+    if (log.querySelector('p')) log.innerHTML = '';
+    const e = document.createElement('div');
+    e.className = 'bg-blue-900/20 border border-blue-700/30 rounded-lg p-2.5 fade-in text-xs';
+    const time = new Date().toLocaleString('id-ID');
+    e.innerHTML = `<div class="flex items-center justify-between mb-1">
+        <span class="font-semibold text-blue-400">🔔 ${alert.symbol}</span>
+        <span class="text-gray-500 text-[10px]">${time}</span>
+    </div>
+    <div class="text-gray-300">Signal: <strong>${oldSignal || '—'}</strong> → <strong class="text-emerald-400">${newSignal}</strong></div>
+    <div class="text-gray-500 text-[10px]">Trigger: ${alert.triggerSignal}</div>`;
+    log.prepend(e);
+}
+
+async function checkAllAlerts() {
+    const alerts = getAlerts();
+    if (alerts.length === 0) return;
+    for (const alert of alerts) {
+        await window.checkAlertNow(alert.id);
+        await new Promise(r => setTimeout(r, 2000)); // delay 2s antar alert
+    }
+}
+
+function renderAlerts() {
+    const alerts = getAlerts();
+    document.getElementById('alCount').textContent = alerts.length;
+    if (alerts.length === 0) {
+        document.getElementById('alBody').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-600">Belum ada alert.</td></tr>';
+        return;
+    }
+    document.getElementById('alBody').innerHTML = alerts.map(alert => {
+        const lastCheckStr = alert.lastCheck ? new Date(alert.lastCheck).toLocaleString('id-ID') : 'Belum dicek';
+        const sigColor = alert.lastSignal && alert.lastSignal.includes('BUY') ? 'bg-green-700/50 text-green-400' :
+                        alert.lastSignal && alert.lastSignal.includes('SELL') ? 'bg-red-700/50 text-red-400' :
+                        'bg-gray-700 text-gray-400';
+        return `<tr class="border-b border-gray-800/30">
+            <td class="px-3 py-2.5 font-semibold text-gray-200">${alert.symbol}</td>
+            <td class="px-3 py-2.5 text-gray-400">${alert.market}</td>
+            <td class="text-center px-3 py-2.5 text-gray-300 text-[10px]">${alert.triggerSignal}</td>
+            <td class="text-center px-3 py-2.5"><span class="px-1.5 py-0.5 rounded ${sigColor} text-[9px] font-semibold">${alert.lastSignal || '—'}</span></td>
+            <td class="px-3 py-2.5 text-gray-500 text-[10px]">${lastCheckStr}</td>
+            <td class="text-center px-3 py-2.5">
+                <button onclick="checkAlertNow(${alert.id})" class="text-blue-400 hover:text-blue-300 text-xs mr-2">🔄</button>
+                <button onclick="removeAlert(${alert.id})" class="text-red-400 hover:text-red-300 text-xs">🗑️</button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+document.getElementById('alEnabled').addEventListener('change', async (e) => {
+    window.alEnabled = e.target.checked;
+    if (window.alEnabled) {
+        if ('Notification' in window && Notification.permission !== 'granted') {
+            await Notification.requestPermission();
+        }
+        if (!alertInterval) {
+            alertInterval = setInterval(checkAllAlerts, 5 * 60 * 1000); // 5 menit
+            // Run immediately
+            checkAllAlerts();
+        }
+    } else {
+        if (alertInterval) {
+            clearInterval(alertInterval);
+            alertInterval = null;
+        }
+    }
+    localStorage.setItem('lina_alerts_enabled', window.alEnabled ? 'true' : 'false');
+});
+
+document.getElementById('alClearBtn').addEventListener('click', () => {
+    if (confirm('Hapus semua alert?')) {
+        localStorage.removeItem('lina_alerts');
+        renderAlerts();
+    }
+});
+
+// Load alert enabled state on init
+window.alEnabled = localStorage.getItem('lina_alerts_enabled') === 'true';
+if (window.alEnabled) {
+    document.getElementById('alEnabled').checked = true;
+    if (!alertInterval) {
+        alertInterval = setInterval(checkAllAlerts, 5 * 60 * 1000);
+    }
+}
+
+// Render portfolio + watchlist + alerts on page load
+setTimeout(() => {
+    renderPortfolio();
+    renderWatchlist();
+    renderAlerts();
+}, 1000);
 
 // Button handlers
 document.getElementById('recScanBtn').addEventListener('click', scanRekomendasi);
