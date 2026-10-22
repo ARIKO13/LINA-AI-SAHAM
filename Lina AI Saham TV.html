@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Version stamp untuk debugging - cek apakah browser pakai versi terbaru -->
-    <meta name="version" content="v17-2026-10-22">
-    <meta name="description" content="Lina AI - Auto-fetch daftar saham dari Yahoo Finance (v17)">
-    <title>Lina AI v17 - Analisis Saham + Rekomendasi</title>
+    <meta name="version" content="v18-2026-10-22">
+    <meta name="description" content="Lina AI - Multi-source: YF + TV + Binance + Indodax + Twelve Data (v18)">
+    <title>Lina AI v18 - Multi-Source Data</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -1963,25 +1963,29 @@ async function fetchYahooChart(symbol, interval = '1d', range = '1y') {
 
 // Versi dengan retry lebih banyak + timeout lebih lama (untuk main analysis)
 async function fetchYahooChartLong(symbol, interval = '1d', range = '1y') {
-    // SMART ROUTING sama dengan fetchYahooChart
+    // ===== MULTI-SOURCE SMART ROUTING (v18) =====
+    // Crypto: Binance → Twelve Data → Yahoo proxy
+    // US: FMP → Yahoo proxy → Twelve Data (fallback)
+    // IDX: Yahoo proxy → Twelve Data (fallback)
+
+    // 1. CRYPTO: Binance (instant, no key)
     if (symbol.endsWith('-USD')) {
         const binanceResult = await fetchBinanceChart(symbol, range);
         if (binanceResult && binanceResult.candles.length >= 30) {
             console.log(`✓ Binance untuk ${symbol} (${binanceResult.candles.length} candles)`);
             return binanceResult;
         }
-        console.log('Binance failed, fallback to Yahoo proxy...');
-    }
-
-    if (symbol.endsWith('.JK') && window.TWELVE_DATA_API_KEY) {
-        const tdResult = await fetchTwelveDataChart(symbol, range);
+        console.log('Binance failed, trying Twelve Data...');
+        // Fallback: Twelve Data (crypto)
+        const tdResult = await fetchTwelveDataChart(symbol.replace('-USD', '/USD'), range);
         if (tdResult && tdResult.candles.length >= 30) {
             console.log(`✓ Twelve Data untuk ${symbol} (${tdResult.candles.length} candles)`);
             return tdResult;
         }
-        console.log('Twelve Data failed, fallback to Yahoo proxy...');
+        console.log('Twelve Data failed, trying Yahoo proxy...');
     }
 
+    // 2. US STOCKS: FMP (if API key)
     const isUS = !symbol.endsWith('.JK') && !symbol.endsWith('-USD') && !symbol.startsWith('^');
     if (isUS && window.FMP_API_KEY && interval === '1d') {
         const fmp = await fetchFMPHistoricalPrice(symbol, range);
@@ -1989,18 +1993,44 @@ async function fetchYahooChartLong(symbol, interval = '1d', range = '1y') {
             console.log(`✓ FMP historical untuk ${symbol} (${fmp.candles.length} candles)`);
             return fmp;
         }
-        console.log('FMP failed, falling back to Yahoo proxy...');
+        console.log('FMP failed, trying Yahoo proxy...');
     }
-    // Yahoo via proxy dengan retry
-    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
-    const j = await fetchWithProxies(url, true, 20000, 3);
-    if (!j.chart || !j.chart.result || !j.chart.result[0]) throw new Error('Data chart tidak valid');
-    const res = j.chart.result[0], t = res.timestamp || [], q = res.indicators.quote[0], c = [];
-    for (let i = 0; i < t.length; i++) {
-        if (q.open[i] == null || q.close[i] == null) continue;
-        c.push({ time: t[i], open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i], volume: q.volume[i] || 0 });
+
+    // 3. YAHOO PROXY (primary untuk IDX, fallback untuk US/Crypto)
+    try {
+        const url = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+        const j = await fetchWithProxies(url, true, 20000, 3);
+        if (!j.chart || !j.chart.result || !j.chart.result[0]) throw new Error('Data chart tidak valid');
+        const res = j.chart.result[0], t = res.timestamp || [], q = res.indicators.quote[0], c = [];
+        for (let i = 0; i < t.length; i++) {
+            if (q.open[i] == null || q.close[i] == null) continue;
+            c.push({ time: t[i], open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i], volume: q.volume[i] || 0 });
+        }
+        if (c.length >= 30) return { candles: c, meta: res.meta || {} };
+        throw new Error('Data tidak cukup dari Yahoo');
+    } catch (e) {
+        console.log('Yahoo proxy failed:', e.message.substring(0, 50));
     }
-    return { candles: c, meta: res.meta || {} };
+
+    // 4. TWELVE DATA (final fallback - support US + Crypto, limited IDX)
+    const tdResult2 = await fetchTwelveDataChart(symbol, range);
+    if (tdResult2 && tdResult2.candles.length >= 30) {
+        console.log(`✓ Twelve Data fallback untuk ${symbol} (${tdResult2.candles.length} candles)`);
+        return tdResult2;
+    }
+
+    // 5. INDODAX (crypto IDR - last resort, hanya harga current)
+    if (symbol.endsWith('-USD')) {
+        const indodax = await fetchIndodaxPrice(symbol);
+        if (indodax) {
+            return {
+                candles: [{ time: Math.floor(Date.now() / 1000), open: indodax.price, high: indodax.high, low: indodax.low, close: indodax.price, volume: indodax.volume }],
+                meta: { symbol, currency: 'IDR', regularMarketPrice: indodax.price }
+            };
+        }
+    }
+
+    throw new Error(`Semua source gagal untuk ${symbol}`);
 }
 
 // === BINANCE API untuk CRYPTO ===
@@ -2395,6 +2425,46 @@ async function fetchFMPSectorPeers(symbol) {
         } catch (e) {}
         return { sector, peers: [] };
     } catch (e) { console.log('FMP sector peers failed:', e.message); }
+    return null;
+}
+
+// === MULTI-SOURCE: Twelve Data (alternatif Yahoo untuk historical prices) ===
+// Twelve Data: support US stocks + Crypto + limited IDX
+// Free: 800 req/hari, API key sudah hardcoded di proxy server
+async function fetchTwelveDataChart(symbol, range = '1y') {
+    if (location.hostname !== 'saham.alynne.my.id') return null;
+    try {
+        const outputsize = range === '2y' ? '500' : range === '1y' ? '365' : range === '6mo' ? '180' : '90';
+        const url = '/twelvedata/history/' + encodeURIComponent(symbol) + '?outputsize=' + outputsize;
+        const data = await fetchDirect(url, true, 15000);
+        if (data && data.candles && data.candles.length >= 30) {
+            console.log(`✓ Twelve Data untuk ${symbol} (${data.candles.length} candles)`);
+            return { candles: data.candles, meta: data.meta || {} };
+        }
+    } catch (e) {
+        console.log('Twelve Data fetch failed:', e.message.substring(0, 50));
+    }
+    return null;
+}
+
+// === MULTI-SOURCE: Indodax (crypto IDR pairs, gratis no key) ===
+// Indodax: hanya ticker real-time, tidak ada historical gratis
+// Dipakai sebagai fallback untuk harga crypto IDR
+async function fetchIndodaxPrice(symbol) {
+    if (location.hostname !== 'saham.alynne.my.id') return null;
+    try {
+        // Convert symbol: BTC-USD → btc_idr
+        const coin = symbol.replace('-USD', '').replace('USD', '').toLowerCase();
+        const pair = coin + '_idr';
+        const url = '/indodax/ticker/' + pair;
+        const data = await fetchDirect(url, true, 10000);
+        if (data && data.last) {
+            console.log(`✓ Indodax untuk ${symbol}: Rp ${data.last.toLocaleString('id-ID')}`);
+            return { price: data.last, source: 'indodax', high: data.high, low: data.low, volume: data.volume };
+        }
+    } catch (e) {
+        console.log('Indodax fetch failed:', e.message.substring(0, 50));
+    }
     return null;
 }
 
