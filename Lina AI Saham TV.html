@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Version stamp untuk debugging - cek apakah browser pakai versi terbaru -->
-    <meta name="version" content="v9-2026-10-21">
-    <meta name="description" content="Lina AI - Analisis Saham: Teknikal + Fundamental + Berita (v9 - raw financial statements)">
-    <title>Lina AI v9 - Analisis Saham (Teknikal + Fundamental + Berita)</title>
+    <meta name="version" content="v10-2026-10-22">
+    <meta name="description" content="Lina AI - Analisis Saham + Rekomendasi Modal (v10)">
+    <title>Lina AI v10 - Analisis Saham + Rekomendasi Modal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -48,8 +48,25 @@
 </head>
 <body class="min-h-screen">
 
+<!-- ============ NAVBAR (NEW - v10) ============ -->
+<nav class="sticky top-0 z-[60] bg-[#0a0e17] border-b border-gray-800 shadow-lg">
+    <div class="max-w-[1800px] mx-auto px-4 py-2 flex items-center gap-4">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center font-bold text-sm text-white">L</div>
+            <span class="text-sm font-bold text-white">Lina AI</span>
+        </div>
+        <div class="flex items-center gap-1 ml-4">
+            <a href="#/analisis" data-route="analisis" class="nav-link active px-3 py-1.5 text-xs font-semibold rounded-lg transition bg-blue-600 text-white">📈 Analisis</a>
+            <a href="#/rekomendasi" data-route="rekomendasi" class="nav-link px-3 py-1.5 text-xs font-semibold rounded-lg transition text-gray-400 hover:text-white hover:bg-gray-800">🎯 Rekomendasi Modal</a>
+        </div>
+        <div class="ml-auto text-[10px] text-gray-600">
+            <span id="navVersion">v10</span>
+        </div>
+    </div>
+</nav>
+
 <!-- ============ HEADER ============ -->
-<header class="sticky top-0 z-50 bg-[#0d1320] border-b border-gray-800 px-4 py-3 shadow-lg">
+<header class="sticky top-[40px] z-50 bg-[#0d1320] border-b border-gray-800 px-4 py-3 shadow-lg" id="mainHeader">
     <div class="max-w-[1800px] mx-auto flex flex-wrap items-center gap-4">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center font-bold text-lg text-white">L</div>
@@ -103,6 +120,7 @@
 </header>
 
 <!-- ============ MAIN ============ -->
+<div id="page-analisis" class="page-content">
 <main class="max-w-[1800px] mx-auto p-4 space-y-4">
 
     <!-- ===== ROW 1: TradingView + Rekomendasi Akhir ===== -->
@@ -732,6 +750,185 @@
         </div>
     </section>
 </main>
+</div><!-- /page-analisis -->
+
+<!-- ============ PAGE: REKOMENDASI MODAL (NEW - v10) ============ -->
+<div id="page-rekomendasi" class="page-content hidden">
+<main class="max-w-[1400px] mx-auto p-4 space-y-6">
+
+    <!-- Hero / Title -->
+    <section class="bg-gradient-to-br from-[#0d1320] to-[#1a2332] rounded-xl border border-gray-800 p-6">
+        <h1 class="text-2xl font-bold text-white mb-2">🎯 Rekomendasi Saham Berdasarkan Modal</h1>
+        <p class="text-sm text-gray-400">
+            Masukkan modal kamu, pilih jangka waktu investasi & profil risiko.
+            Lina AI akan scan pasar (US + IDX + Crypto) dan rekomendasi alokasi saham
+            yang sesuai dengan strategi: <strong>Swing Trading (Pendek)</strong>,
+            <strong>Growth + Value (Menengah)</strong>, atau <strong>Value Investing (Panjang)</strong>.
+        </p>
+    </section>
+
+    <!-- Form Input -->
+    <section class="bg-[#0d1320] rounded-xl border border-gray-800 p-6">
+        <h2 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">📋 Input Investasi</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Modal -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">💰 Modal (IDR)</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">Rp</span>
+                    <input type="number" id="recModal" value="10000000" min="100000" step="100000"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-blue-500 font-mono">
+                </div>
+                <p class="text-[10px] text-gray-500 mt-1">Min Rp 100.000</p>
+            </div>
+
+            <!-- Currency -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">💱 Mata Uang</label>
+                <select id="recCurrency" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="IDR" selected>IDR (Rupiah)</option>
+                    <option value="USD">USD (Dollar)</option>
+                </select>
+            </div>
+
+            <!-- Jangka Waktu -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">⏱️ Jangka Waktu</label>
+                <select id="recJangka" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="pendek">Pendek (1-3 bulan) - Swing Trading</option>
+                    <option value="menengah" selected>Menengah (3-12 bulan) - Growth + Value</option>
+                    <option value="panjang">Panjang (1+ tahun) - Value Investing</option>
+                </select>
+            </div>
+
+            <!-- Risk Profile -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">⚖️ Profil Risiko</label>
+                <select id="recRisk" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="konservatif">Konservatif (Low Risk)</option>
+                    <option value="moderat" selected>Moderat (Medium Risk)</option>
+                    <option value="agresif">Agresif (High Risk)</option>
+                </select>
+            </div>
+
+            <!-- Market Preference -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">🌍 Market</label>
+                <select id="recMarket" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="ALL" selected>Semua (US + IDX + Crypto)</option>
+                    <option value="NASDAQ">US Stocks (NASDAQ)</option>
+                    <option value="IDX">IHSG (Indonesia)</option>
+                    <option value="CRYPTO">Crypto</option>
+                </select>
+            </div>
+
+            <!-- Max Stocks -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">📊 Maks Saham</label>
+                <select id="recMaxStocks" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    <option value="3">3 Saham</option>
+                    <option value="5" selected>5 Saham</option>
+                    <option value="8">8 Saham</option>
+                    <option value="10">10 Saham</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Strategy Info -->
+        <div id="strategyInfo" class="mt-4 bg-blue-900/20 border border-blue-700/30 rounded-lg p-3 text-xs text-blue-300">
+            <p class="font-semibold mb-1">💡 Strategi: <span id="strategyName">Menengah (Growth + Value)</span></p>
+            <p id="strategyDesc">Kombinasi saham growth (pertumbuhan tinggi) dan value (undervalued).
+            Bobot: Fundamental 50%, Teknikal 35%, Berita 15%.</p>
+        </div>
+
+        <!-- Action button -->
+        <div class="mt-4 flex gap-2">
+            <button id="recScanBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Scan & Rekomendasi
+            </button>
+            <button id="recClearBtn" class="bg-gray-700 hover:bg-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium transition">
+                Reset
+            </button>
+        </div>
+    </section>
+
+    <!-- Loading / Progress -->
+    <section id="recProgress" class="hidden bg-[#0d1320] rounded-xl border border-gray-800 p-6">
+        <div class="flex items-center gap-3 mb-3">
+            <div class="inline-block w-6 h-6 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin"></div>
+            <span id="recProgressText" class="text-sm text-gray-400">Memulai scan...</span>
+        </div>
+        <div class="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+            <div id="recProgressBar" class="bg-gradient-to-r from-blue-500 to-emerald-500 h-2 transition-all duration-300" style="width: 0%"></div>
+        </div>
+    </section>
+
+    <!-- Summary Cards -->
+    <section id="recSummary" class="hidden grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+            <div class="text-[10px] text-gray-500 uppercase">Total Modal</div>
+            <div id="recTotalModal" class="text-lg font-bold text-white">—</div>
+        </div>
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+            <div class="text-[10px] text-gray-500 uppercase">Saham Terpilih</div>
+            <div id="recStockCount" class="text-lg font-bold text-blue-400">—</div>
+        </div>
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+            <div class="text-[10px] text-gray-500 uppercase">Avg Risk Score</div>
+            <div id="recAvgRisk" class="text-lg font-bold text-yellow-400">—</div>
+        </div>
+        <div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+            <div class="text-[10px] text-gray-500 uppercase">Strategi</div>
+            <div id="recStrategyShort" class="text-lg font-bold text-emerald-400">—</div>
+        </div>
+    </section>
+
+    <!-- Results Table -->
+    <section id="recResults" class="hidden bg-[#0d1320] rounded-xl border border-gray-800 overflow-hidden">
+        <div class="px-4 py-2.5 border-b border-gray-800 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-gray-300">📊 Alokasi Saham Rekomendasi</h2>
+            <button id="recExportBtn" class="text-xs bg-gray-700 hover:bg-blue-600 text-gray-200 px-3 py-1 rounded transition">⬇ Export CSV</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead class="bg-gray-800/40">
+                    <tr class="text-gray-500 border-b border-gray-700">
+                        <th class="text-left px-3 py-2.5 font-medium">#</th>
+                        <th class="text-left px-3 py-2.5 font-medium">Saham</th>
+                        <th class="text-right px-3 py-2.5 font-medium">Alokasi</th>
+                        <th class="text-right px-3 py-2.5 font-medium">Skor</th>
+                        <th class="text-center px-3 py-2.5 font-medium">Signal</th>
+                        <th class="text-left px-3 py-2.5 font-medium">Alasan</th>
+                    </tr>
+                </thead>
+                <tbody id="recResultsBody"></tbody>
+                <tfoot>
+                    <tr class="bg-gray-800/40 border-t-2 border-gray-700">
+                        <td colspan="2" class="px-3 py-2.5 font-bold text-gray-200">TOTAL</td>
+                        <td id="recTotalAllocation" class="text-right px-3 py-2.5 font-bold text-emerald-400">—</td>
+                        <td colspan="3"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+
+    <!-- Detail Cards -->
+    <section id="recDetail" class="hidden space-y-3"></section>
+
+    <!-- Disclaimer -->
+    <section class="bg-yellow-900/20 border border-yellow-700/30 rounded-xl p-4 text-xs text-yellow-300">
+        <p class="font-semibold mb-1">⚠️ Disclaimer</p>
+        <p>Rekomendasi ini dihasilkan oleh algoritma berdasarkan analisis teknikal, fundamental, dan berita.
+        Bukan saran investasi resmi. Selalu lakukan riset sendiri (Do Your Own Research)
+        dan konsultasi dengan advisor finansial sebelum investasi.</p>
+    </section>
+
+</main>
+</div><!-- /page-rekomendasi -->
 
 <footer class="text-center py-4 text-xs text-gray-600">
     <p>Lina AI — Analisis Teknikal + Fundamental + Berita | Pemula Friendly</p>
@@ -3390,6 +3587,367 @@ document.getElementById('settingsModal').addEventListener('click', (e) => {
     if (e.target.id === 'settingsModal') closeSettingsModal();
 });
 
+// ═══════════════════════════════════════════════════════════
+//  MULTI-PAGE ROUTING (v10)
+// ═══════════════════════════════════════════════════════════
+
+function navigateTo(route) {
+    document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
+    document.querySelectorAll('.nav-link').forEach(l => {
+        l.classList.remove('active', 'bg-blue-600', 'text-white');
+        l.classList.add('text-gray-400', 'hover:text-white', 'hover:bg-gray-800');
+    });
+
+    const page = document.getElementById('page-' + route);
+    const link = document.querySelector(`[data-route="${route}"]`);
+    if (page) page.classList.remove('hidden');
+    if (link) {
+        link.classList.add('active', 'bg-blue-600', 'text-white');
+        link.classList.remove('text-gray-400', 'hover:text-white', 'hover:bg-gray-800');
+    }
+
+    // Show/hide main header (analisis page only)
+    const header = document.getElementById('mainHeader');
+    if (header) header.style.display = route === 'analisis' ? '' : 'none';
+
+    // Update URL hash
+    if (location.hash !== '#/' + route) {
+        history.replaceState(null, '', '#/' + route);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const route = link.dataset.route;
+        navigateTo(route);
+    });
+});
+
+// Handle browser back/forward
+window.addEventListener('hashchange', () => {
+    const route = location.hash.replace('#/', '') || 'analisis';
+    navigateTo(route);
+});
+
+// ═══════════════════════════════════════════════════════════
+//  REKOMENDASI MODAL ENGINE (v10)
+// ═══════════════════════════════════════════════════════════
+
+// Strategi klasifikasi berdasarkan jangka waktu
+const STRATEGIES = {
+    pendek: {
+        name: 'Pendek (Swing Trading)',
+        short: 'Swing',
+        desc: 'Fokus momentum harga jangka pendek (1-3 bulan). Bobot: Teknikal 60%, Berita 25%, Fundamental 15%. Cari saham oversold + momentum bullish + MACD cross.',
+        weights: { tech: 0.60, fund: 0.15, news: 0.25 },
+        minScore: 2,
+        preferSignals: ['STRONG BUY', 'BUY'],
+        avoidSignals: ['STRONG SELL', 'SELL'],
+    },
+    menengah: {
+        name: 'Menengah (Growth + Value)',
+        short: 'Growth',
+        desc: 'Kombinasi saham growth (pertumbuhan tinggi) dan value (undervalued). Bobot: Fundamental 50%, Teknikal 35%, Berita 15%.',
+        weights: { tech: 0.35, fund: 0.50, news: 0.15 },
+        minScore: 2,
+        preferSignals: ['STRONG BUY', 'BUY', 'HOLD'],
+        avoidSignals: ['STRONG SELL'],
+    },
+    panjang: {
+        name: 'Panjang (Value Investing)',
+        short: 'Value',
+        desc: 'Investasi jangka panjang (1+ tahun). Bobot: Fundamental 70%, Teknikal 15%, Berita 15%. Cari perusahaan sehat (ROE tinggi, utang rendah, FCF positif, valuasi wajar).',
+        weights: { tech: 0.15, fund: 0.70, news: 0.15 },
+        minScore: 4,
+        preferSignals: ['STRONG BUY', 'BUY', 'HOLD'],
+        avoidSignals: ['STRONG SELL', 'SELL'],
+    },
+};
+
+const RISK_PROFILES = {
+    konservatif: { maxVolatility: 1.0, maxAllocation: 0.35, preferStable: true },
+    moderat: { maxVolatility: 1.5, maxAllocation: 0.30, preferStable: false },
+    agresif: { maxVolatility: 3.0, maxAllocation: 0.40, preferStable: false },
+};
+
+// Update strategy info saat user ganti jangka
+document.getElementById('recJangka').addEventListener('change', (e) => {
+    const strat = STRATEGIES[e.target.value];
+    if (strat) {
+        document.getElementById('strategyName').textContent = strat.name;
+        document.getElementById('strategyDesc').textContent = strat.desc;
+    }
+});
+
+// Progress bar helper
+function setRecProgress(percent, text) {
+    const bar = document.getElementById('recProgressBar');
+    const txt = document.getElementById('recProgressText');
+    if (bar) bar.style.width = percent + '%';
+    if (txt && text) txt.textContent = text;
+}
+
+// Main scan + recommendation function
+async function scanRekomendasi() {
+    const modal = parseFloat(document.getElementById('recModal').value);
+    const currency = document.getElementById('recCurrency').value;
+    const jangka = document.getElementById('recJangka').value;
+    const risk = document.getElementById('recRisk').value;
+    const marketFilter = document.getElementById('recMarket').value;
+    const maxStocks = parseInt(document.getElementById('recMaxStocks').value);
+
+    if (!modal || modal < 100000) {
+        alert('Modal minimal Rp 100.000');
+        return;
+    }
+
+    const strat = STRATEGIES[jangka];
+    const profile = RISK_PROFILES[risk];
+
+    // Show progress
+    document.getElementById('recProgress').classList.remove('hidden');
+    document.getElementById('recSummary').classList.add('hidden');
+    document.getElementById('recResults').classList.add('hidden');
+    document.getElementById('recDetail').classList.add('hidden');
+    setRecProgress(5, 'Memulai scan...');
+
+    // Determine symbols to scan
+    let symbolsToScan = [];
+    SCREENER_SYMBOLS.forEach(s => {
+        if (marketFilter === 'ALL' || s.market === marketFilter) {
+            symbolsToScan.push(s);
+        }
+    });
+
+    setRecProgress(10, `Scanning ${symbolsToScan.length} saham...`);
+
+    // Scan each symbol: fetch chart + analyze tech
+    const results = [];
+    for (let i = 0; i < symbolsToScan.length; i++) {
+        const sym = symbolsToScan[i];
+        setRecProgress(10 + (i / symbolsToScan.length) * 70, `(${i + 1}/${symbolsToScan.length}) Scanning ${sym.unified}...`);
+        try {
+            const mapped = mapSymbol(sym.market, sym.unified);
+            const { candles } = await fetchYahooChart(mapped.yahoo, '1d', '6mo');
+            if (candles.length < 50) continue;
+            const tech = analyzeTechnical(candles);
+
+            // Fetch fundamental (optional, parallel)
+            let fundScore = 0;
+            let fundSignal = 'N/A';
+            let fundReasons = [];
+            try {
+                const qs = await fetchYahooQuoteSummary(mapped.yahoo);
+                const fund = analyzeFundamental(qs, sym.market);
+                fundScore = fund.score || 0;
+                fundSignal = fund.signal || 'N/A';
+                fundReasons = fund.reasons || [];
+            } catch (e) {}
+
+            // Skip jika signal di avoid list
+            if (strat.avoidSignals.some(s => tech.signal.includes(s)) && !strat.preferSignals.some(s => tech.signal.includes(s))) {
+                console.log(`Skip ${sym.unified}: signal ${tech.signal} di avoid list`);
+                continue;
+            }
+
+            // Calculate composite score based on strategy weights
+            const techNorm = (tech.score + 10) / 20 * 100; // -10..10 → 0..100
+            const fundNorm = (fundScore / 10) * 100; // 0..10 → 0..100
+            const newsNorm = 50; // default netral kalau tidak ada news data
+            const composite = techNorm * strat.weights.tech + fundNorm * strat.weights.fund + newsNorm * strat.weights.news;
+
+            results.push({
+                symbol: sym.unified,
+                name: sym.name,
+                market: sym.market,
+                techScore: tech.score,
+                techSignal: tech.signal,
+                techReasons: tech.reasons.slice(0, 2),
+                fundScore: fundScore,
+                fundSignal: fundSignal,
+                fundReasons: fundReasons.slice(0, 2),
+                compositeScore: composite,
+                price: candles[candles.length - 1].close,
+            });
+        } catch (e) {
+            console.log(`Skip ${sym.unified}: ${e.message.substring(0, 50)}`);
+        }
+    }
+
+    setRecProgress(85, 'Memfilter & ranking...');
+
+    // Sort by composite score descending
+    results.sort((a, b) => b.compositeScore - a.compositeScore);
+
+    // Take top N
+    const topResults = results.slice(0, maxStocks);
+
+    setRecProgress(95, 'Menghitung alokasi...');
+
+    // Calculate allocation
+    // Weight: based on composite score (higher score = bigger allocation)
+    // Max allocation per stock based on risk profile
+    const totalScore = topResults.reduce((sum, r) => sum + r.compositeScore, 0);
+    const allocations = topResults.map(r => {
+        const weight = r.compositeScore / totalScore;
+        const cappedWeight = Math.min(weight, profile.maxAllocation);
+        return { ...r, weight: cappedWeight, allocation: modal * cappedWeight };
+    });
+
+    // Renormalize kalau ada yang di-cap
+    const totalAllocated = allocations.reduce((sum, r) => sum + r.allocation, 0);
+    const scale = modal / totalAllocated;
+    allocations.forEach(r => {
+        r.allocation = r.allocation * scale;
+        r.weight = r.allocation / modal;
+    });
+
+    setRecProgress(100, 'Selesai!');
+    await new Promise(r => setTimeout(r, 300));
+
+    // Render results
+    renderRekomendasiResults(allocations, modal, currency, strat, profile);
+}
+
+function renderRekomendasiResults(allocations, modal, currency, strat, profile) {
+    document.getElementById('recProgress').classList.add('hidden');
+
+    // Summary cards
+    document.getElementById('recSummary').classList.remove('hidden');
+    const fmtMoney = (v) => {
+        if (currency === 'IDR') {
+            return 'Rp ' + v.toLocaleString('id-ID', { maximumFractionDigits: 0 });
+        }
+        return '$ ' + v.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    };
+    document.getElementById('recTotalModal').textContent = fmtMoney(modal);
+    document.getElementById('recStockCount').textContent = allocations.length + ' saham';
+    const avgRisk = allocations.reduce((s, r) => s + r.compositeScore, 0) / allocations.length;
+    document.getElementById('recAvgRisk').textContent = avgRisk.toFixed(0) + '/100';
+    document.getElementById('recStrategyShort').textContent = strat.short;
+
+    // Results table
+    document.getElementById('recResults').classList.remove('hidden');
+    const tbody = document.getElementById('recResultsBody');
+    tbody.innerHTML = allocations.map((r, i) => {
+        const sigColor = r.techSignal.includes('STRONG BUY') ? 'bg-green-600 text-white' :
+                         r.techSignal.includes('BUY') ? 'bg-green-700/50 text-green-400' :
+                         r.techSignal.includes('STRONG SELL') ? 'bg-red-600 text-white' :
+                         r.techSignal.includes('SELL') ? 'bg-red-700/50 text-red-400' :
+                         'bg-gray-700 text-gray-400';
+        const reasons = [...r.techReasons, ...r.fundReasons].slice(0, 2).join(' • ');
+        return `<tr class="border-b border-gray-800/30 hover:bg-gray-800/30 cursor-pointer" onclick="loadSymbolFromScreener('${r.market}', '${r.symbol}')">
+            <td class="px-3 py-2.5 text-gray-500">${i + 1}</td>
+            <td class="px-3 py-2.5">
+                <div class="font-semibold text-gray-200">${r.symbol}</div>
+                <div class="text-[10px] text-gray-500">${r.name} • ${r.market}</div>
+            </td>
+            <td class="text-right px-3 py-2.5">
+                <div class="font-bold text-emerald-400">${fmtMoney(r.allocation)}</div>
+                <div class="text-[10px] text-gray-500">${(r.weight * 100).toFixed(1)}%</div>
+            </td>
+            <td class="text-right px-3 py-2.5">
+                <div class="font-bold text-gray-200">${r.compositeScore.toFixed(0)}</div>
+                <div class="text-[10px] text-gray-500">T:${r.techScore.toFixed(1)} F:${r.fundScore.toFixed(1)}</div>
+            </td>
+            <td class="text-center px-3 py-2.5">
+                <span class="px-2 py-0.5 rounded ${sigColor} font-semibold text-[9px]">${r.techSignal}</span>
+            </td>
+            <td class="px-3 py-2.5 text-[10px] text-gray-400 max-w-xs">${reasons || '—'}</td>
+        </tr>`;
+    }).join('');
+    document.getElementById('recTotalAllocation').textContent = fmtMoney(modal);
+
+    // Detail cards
+    const detail = document.getElementById('recDetail');
+    detail.classList.remove('hidden');
+    detail.innerHTML = allocations.map((r, i) => {
+        return `<div class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+            <div class="flex items-center justify-between mb-2">
+                <div>
+                    <div class="text-lg font-bold text-white">${r.symbol} <span class="text-xs text-gray-500 ml-1">${r.name}</span></div>
+                    <div class="text-xs text-gray-500">${r.market} • Harga: ${r.price.toFixed(2)}</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-lg font-bold text-emerald-400">${fmtMoney(r.allocation)}</div>
+                    <div class="text-xs text-gray-500">${(r.weight * 100).toFixed(1)}% dari modal</div>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mt-3 text-xs">
+                <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 uppercase">Teknikal</div>
+                    <div class="font-bold text-gray-200">${r.techScore.toFixed(1)}/10</div>
+                    <div class="text-[10px] text-gray-400">${r.techSignal}</div>
+                </div>
+                <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 uppercase">Fundamental</div>
+                    <div class="font-bold text-gray-200">${r.fundScore.toFixed(1)}/10</div>
+                    <div class="text-[10px] text-gray-400">${r.fundSignal}</div>
+                </div>
+                <div class="bg-gray-800/40 rounded p-2 border border-gray-700/50">
+                    <div class="text-[10px] text-gray-500 uppercase">Composite</div>
+                    <div class="font-bold text-emerald-400">${r.compositeScore.toFixed(0)}/100</div>
+                </div>
+            </div>
+            <div class="mt-3 text-[10px] text-gray-400">
+                <div class="font-semibold text-gray-300 mb-1">Alasan Rekomendasi:</div>
+                ${[...r.techReasons, ...r.fundReasons].map(r => `<div>• ${r}</div>`).join('')}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// Export rekomendasi ke CSV
+document.getElementById('recExportBtn').addEventListener('click', () => {
+    const rows = document.querySelectorAll('#recResultsBody tr');
+    if (rows.length === 0) {
+        alert('Tidak ada data untuk diexport');
+        return;
+    }
+    const csv = ['No,Symbol,Name,Market,Allocation,Weight,TechScore,FundScore,Composite,Signal,Reasons'];
+    rows.forEach((row, i) => {
+        const cells = row.querySelectorAll('td');
+        const symbol = cells[1]?.querySelector('.font-semibold')?.textContent || '';
+        const name = cells[1]?.querySelector('.text-\\[10px\\]')?.textContent || '';
+        const alloc = cells[2]?.querySelector('.font-bold')?.textContent || '';
+        const weight = cells[2]?.querySelector('.text-\\[10px\\]')?.textContent || '';
+        const scores = cells[3]?.querySelectorAll('div');
+        const composite = scores?.[0]?.textContent || '';
+        const tf = scores?.[1]?.textContent || '';
+        const signal = cells[4]?.querySelector('span')?.textContent || '';
+        const reasons = cells[5]?.textContent?.trim() || '';
+        csv.push(`${i + 1},"${symbol}","${name}","","${alloc}","${weight}","${tf}","${composite}","${signal}","${reasons.replace(/"/g, '""')}"`);
+    });
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rekomendasi_saham_${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+});
+
+// Button handlers
+document.getElementById('recScanBtn').addEventListener('click', scanRekomendasi);
+document.getElementById('recClearBtn').addEventListener('click', () => {
+    document.getElementById('recModal').value = '10000000';
+    document.getElementById('recJangka').value = 'menengah';
+    document.getElementById('recRisk').value = 'moderat';
+    document.getElementById('recMarket').value = 'ALL';
+    document.getElementById('recMaxStocks').value = '5';
+    document.getElementById('recProgress').classList.add('hidden');
+    document.getElementById('recSummary').classList.add('hidden');
+    document.getElementById('recResults').classList.add('hidden');
+    document.getElementById('recDetail').classList.add('hidden');
+    // Reset strategy info
+    document.getElementById('strategyName').textContent = STRATEGIES.menengah.name;
+    document.getElementById('strategyDesc').textContent = STRATEGIES.menengah.desc;
+});
+
 // INIT
 window.addEventListener('DOMContentLoaded', () => {
     // Load semua API keys + custom proxy dari localStorage
@@ -3414,6 +3972,12 @@ window.addEventListener('DOMContentLoaded', () => {
     loadFromInput().then(() => {
         setTimeout(runScreener, 8000);
     });
+
+    // Initial route - handle URL hash
+    const initialRoute = location.hash.replace('#/', '') || 'analisis';
+    if (initialRoute !== 'analisis') {
+        navigateTo(initialRoute);
+    }
 });
 </script>
 
