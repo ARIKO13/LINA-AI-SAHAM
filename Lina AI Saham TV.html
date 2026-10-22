@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Version stamp untuk debugging - cek apakah browser pakai versi terbaru -->
-    <meta name="version" content="v16-2026-10-22">
-    <meta name="description" content="Lina AI - 100+ saham IDX + filter modal (v16)">
-    <title>Lina AI v16 - Analisis Saham + Rekomendasi</title>
+    <meta name="version" content="v17-2026-10-22">
+    <meta name="description" content="Lina AI - Auto-fetch daftar saham dari Yahoo Finance (v17)">
+    <title>Lina AI v17 - Analisis Saham + Rekomendasi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -4271,12 +4271,63 @@ async function scanRekomendasi() {
     setRecProgress(5, 'Memulai scan...');
 
     // Determine symbols to scan
+    // AUTO-FETCH: coba ambil daftar saham lengkap dari yfinance screener proxy
+    // Kalau gagal, fallback ke hardcoded SCREENER_SYMBOLS
     let symbolsToScan = [];
-    SCREENER_SYMBOLS.forEach(s => {
-        if (marketFilter === 'ALL' || s.market === marketFilter) {
-            symbolsToScan.push(s);
+
+    // Coba auto-fetch dari screener proxy (hanya kalau di saham.alynne.my.id)
+    if (location.hostname === 'saham.alynne.my.id') {
+        try {
+            setRecProgress(5, 'Auto-fetch daftar saham dari Yahoo Finance...');
+            const marketsToFetch = marketFilter === 'ALL' ? ['IDX', 'NASDAQ', 'CRYPTO'] : [marketFilter];
+            for (const mkt of marketsToFetch) {
+                try {
+                    const url = '/yfinance/screener/' + mkt;
+                    const data = await fetchDirect(url, true, 30000);
+                    if (data && data.symbols && data.symbols.length > 0) {
+                        for (const s of data.symbols) {
+                            // Parse symbol untuk SCREENER_SYMBOLS format
+                            let unified = s.symbol;
+                            let market = mkt;
+                            if (s.symbol.endsWith('.JK')) {
+                                market = 'IDX';
+                                unified = s.symbol.replace('.JK', '');
+                            } else if (s.symbol.endsWith('-USD')) {
+                                market = 'CRYPTO';
+                                unified = s.symbol.replace('-USD', 'USD');
+                            }
+                            symbolsToScan.push({
+                                market: market,
+                                unified: unified,
+                                name: s.name || unified,
+                            });
+                        }
+                        console.log(`✓ Auto-fetched ${data.count} ${mkt} symbols from screener`);
+                    }
+                } catch (e) {
+                    console.log(`Screener fetch ${mkt} failed, using hardcoded:`, e.message.substring(0, 50));
+                    // Fallback ke hardcoded
+                    SCREENER_SYMBOLS.forEach(s => {
+                        if (s.market === mkt) symbolsToScan.push(s);
+                    });
+                }
+            }
+        } catch (e) {
+            console.log('Auto-fetch failed, using hardcoded list');
+            SCREENER_SYMBOLS.forEach(s => {
+                if (marketFilter === 'ALL' || s.market === marketFilter) {
+                    symbolsToScan.push(s);
+                }
+            });
         }
-    });
+    } else {
+        // Bukan di saham.alynne.my.id - pakai hardcoded list
+        SCREENER_SYMBOLS.forEach(s => {
+            if (marketFilter === 'ALL' || s.market === marketFilter) {
+                symbolsToScan.push(s);
+            }
+        });
+    }
 
     setRecProgress(10, `Scanning ${symbolsToScan.length} saham...`);
 
