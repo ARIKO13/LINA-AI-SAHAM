@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Version stamp untuk debugging - cek apakah browser pakai versi terbaru -->
-    <meta name="version" content="v19-2026-10-22">
-    <meta name="description" content="Lina AI - Price ticker bar + multi-source data (v19)">
-    <title>Lina AI v19 - Price Ticker + Multi-Source</title>
+    <meta name="version" content="v20-2026-10-22">
+    <meta name="description" content="Lina AI - Prediksi harga + bandar analysis (v20)">
+    <title>Lina AI v20 - Prediksi Harga + Bandar Analysis</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -127,7 +127,73 @@
 <div id="page-analisis" class="page-content">
 <main class="max-w-[1800px] mx-auto p-4 space-y-4">
 
-    <!-- ===== PRICE TICKER BAR (NEW - v19) ===== -->
+    <!-- ===== PREDIKSI HARGA (NEW - v20) ===== -->
+    <div id="predictionPanel" class="bg-[#0d1320] rounded-xl border border-gray-800 p-4">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-purple-400 pulse-dot"></span>
+                <h2 class="text-sm font-semibold text-gray-300">🔮 Prediksi Harga (AI + Bandar Analysis)</h2>
+            </div>
+            <span id="predTimeframe" class="text-[10px] text-gray-500">Jangka Pendek (1-7 hari)</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <!-- Prediksi Arah -->
+            <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50 text-center">
+                <div class="text-[10px] text-gray-500 uppercase mb-1">Arah Prediksi</div>
+                <div id="predDirection" class="text-2xl font-bold text-gray-400">—</div>
+                <div id="predDirectionIcon" class="text-xl mt-1">⏳</div>
+            </div>
+            <!-- Confidence -->
+            <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50 text-center">
+                <div class="text-[10px] text-gray-500 uppercase mb-1">Confidence</div>
+                <div id="predConfidence" class="text-2xl font-bold text-gray-400">—</div>
+                <div class="w-full bg-gray-700 rounded-full h-1.5 mt-2">
+                    <div id="predConfidenceBar" class="bg-gradient-to-r from-yellow-500 to-green-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+            <!-- Target Harga -->
+            <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50 text-center">
+                <div class="text-[10px] text-gray-500 uppercase mb-1">Target Harga</div>
+                <div id="predTarget" class="text-xl font-bold text-gray-400">—</div>
+                <div id="predTargetPct" class="text-[10px] text-gray-500 mt-1">—</div>
+            </div>
+            <!-- Support/Resistance -->
+            <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50 text-center">
+                <div class="text-[10px] text-gray-500 uppercase mb-1">Support / Resistance</div>
+                <div class="flex justify-center gap-3 items-baseline">
+                    <span id="predSupport" class="text-sm font-bold text-red-400">—</span>
+                    <span class="text-gray-600">/</span>
+                    <span id="predResistance" class="text-sm font-bold text-green-400">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail Analysis -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+            <!-- Analisis Teknikal -->
+            <div class="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30">
+                <div class="text-[10px] text-gray-500 uppercase mb-1.5">📊 Sinyal Teknikal</div>
+                <div id="predTechSignals" class="text-[11px] text-gray-300 space-y-0.5">
+                    <p>Menunggu data...</p>
+                </div>
+            </div>
+            <!-- Analisis Bandar -->
+            <div class="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30">
+                <div class="text-[10px] text-gray-500 uppercase mb-1.5">🏦 Aktivitas Bandar</div>
+                <div id="predBandarSignals" class="text-[11px] text-gray-300 space-y-0.5">
+                    <p>Menunggu data...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div id="predSummary" class="mt-3 bg-blue-900/20 border border-blue-700/30 rounded-lg p-2.5 text-[11px] text-blue-300">
+            <p>Menunggu analisis...</p>
+        </div>
+    </div>
+
+    <!-- ===== PRICE TICKER BAR (v19) ===== -->
     <div id="priceTickerBar" class="bg-[#0d1320] rounded-xl border border-gray-800 p-4 flex items-center justify-between flex-wrap gap-3">
         <div class="flex items-center gap-4">
             <div>
@@ -3193,6 +3259,305 @@ function initYahooChart() {
     new ResizeObserver(() => { if (yahooChart && c.clientWidth > 0) yahooChart.applyOptions({ width: c.clientWidth, height: c.clientHeight }); }).observe(c);
 }
 
+// ===== PREDICTION ENGINE (v20) =====
+// Prediksi arah harga berdasarkan:
+// 1. Analisis teknikal (EMA, RSI, MACD, BB, Stochastic, ATR)
+// 2. Aktivitas bandar (volume analysis, accumulation/distribution, OBV)
+function generatePrediction(candles, ind, meta) {
+    if (!candles || candles.length < 50) return null;
+
+    const closes = candles.map(c => c.close);
+    const volumes = candles.map(c => c.volume || 0);
+    const li = candles.length - 1;
+    const price = closes[li];
+    const currency = meta?.currency || (currentYahooSymbol.endsWith('.JK') ? 'IDR' : 'USD');
+
+    let bullScore = 0;
+    let bearScore = 0;
+    const techSignals = [];
+    const bandarSignals = [];
+
+    // ========== 1. ANALISIS TEKNIKAL ==========
+    const ema50 = ind?.ema50 || [];
+    const ema200 = ind?.ema200 || [];
+    const rsi = ind?.rsi || [];
+    const macd = ind?.macd || {};
+    const bb = ind?.bb || {};
+    const stoch = ind?.stoch || {};
+    const atr = ind?.atr || [];
+
+    // a) Trend EMA
+    const e50 = ema50[li], e200 = ema200[li];
+    if (e50 !== null && e200 !== null) {
+        if (e50 > e200) { bullScore += 2; techSignals.push('✅ EMA50 > EMA200 (Uptrend)'); }
+        else { bearScore += 2; techSignals.push('❌ EMA50 < EMA200 (Downtrend)'); }
+    }
+    if (e50 !== null) {
+        if (price > e50) { bullScore += 1; techSignals.push('✅ Harga di atas EMA50'); }
+        else { bearScore += 1; techSignals.push('❌ Harga di bawah EMA50'); }
+    }
+
+    // b) RSI
+    const rsiV = rsi[li];
+    if (rsiV !== null) {
+        if (rsiV < 30) { bullScore += 2; techSignals.push(`✅ RSI oversold (${rsiV.toFixed(0)}) - rebound likely`); }
+        else if (rsiV > 70) { bearScore += 2; techSignals.push(`❌ RSI overbought (${rsiV.toFixed(0)}) - koreksi likely`); }
+        else if (rsiV < 45) { bullScore += 1; techSignals.push(`⚪ RSI mendekati oversold (${rsiV.toFixed(0)})`); }
+        else if (rsiV > 55) { bearScore += 1; techSignals.push(`⚪ RSI mendekati overbought (${rsiV.toFixed(0)})`); }
+        else { techSignals.push(`⚪ RSI netral (${rsiV.toFixed(0)})`); }
+    }
+
+    // c) MACD
+    const mv = macd.macdLine?.[li], sv = macd.signalLine?.[li], hv = macd.histogram?.[li];
+    if (mv !== null && sv !== null) {
+        if (mv > sv) { bullScore += 2; techSignals.push('✅ MACD bullish (di atas signal)'); }
+        else { bearScore += 2; techSignals.push('❌ MACD bearish (di bawah signal)'); }
+    }
+    const prevH = macd.histogram?.[li - 1];
+    if (hv !== null && prevH !== null) {
+        if (hv > prevH) { bullScore += 1; techSignals.push('✅ MACD histogram meningkat (momentum naik)'); }
+        else { bearScore += 1; techSignals.push('❌ MACD histogram menurun (momentum turun)'); }
+    }
+
+    // d) Bollinger Bands
+    const bbU = bb.upper?.[li], bbL = bb.lower?.[li], bbM = bb.middle?.[li];
+    if (bbU !== null && bbL !== null) {
+        if (price < bbL) { bullScore += 2; techSignals.push('✅ Harga di bawah BB lower - rebound likely'); }
+        else if (price > bbU) { bearScore += 2; techSignals.push('❌ Harga di atas BB upper - koreksi likely'); }
+        else {
+            const bbPos = (price - bbL) / (bbU - bbL) * 100;
+            techSignals.push(`⚪ Posisi BB: ${bbPos.toFixed(0)}% (0=lower, 100=upper)`);
+        }
+    }
+
+    // e) Stochastic
+    const kV = stoch.k?.[li], dV = stoch.d?.[li];
+    if (kV !== null && dV !== null) {
+        if (kV < 20) { bullScore += 1; techSignals.push('✅ Stochastic oversold'); }
+        else if (kV > 80) { bearScore += 1; techSignals.push('❌ Stochastic overbought'); }
+        if (kV > dV && kV < 80) { bullScore += 1; techSignals.push('✅ Stochastic bullish cross'); }
+        else if (kV < dV && kV > 20) { bearScore += 1; techSignals.push('❌ Stochastic bearish cross'); }
+    }
+
+    // ========== 2. ANALISIS BANDAR (Volume + Accumulation/Distribution) ==========
+    
+    // a) Volume analysis (bandar accumulation vs distribution)
+    const recentVol = volumes.slice(-20).reduce((a, b) => a + b, 0) / 20;
+    const avgVol = volumes.slice(-50, -20).reduce((a, b) => a + b, 0) / 30;
+    const volRatio = avgVol > 0 ? recentVol / avgVol : 1;
+
+    if (volRatio > 1.5) {
+        // Volume tinggi - cek arah
+        const recentChange = closes[li] - closes[li - 5];
+        if (recentChange > 0) {
+            bullScore += 3;
+            bandarSignals.push(`🔥 Volume tinggi (${volRatio.toFixed(1)}x normal) + harga naik = AKUMULASI BANDAR`);
+        } else {
+            bearScore += 3;
+            bandarSignals.push(`🔥 Volume tinggi (${volRatio.toFixed(1)}x normal) + harga turun = DISTRIBUSI BANDAR`);
+        }
+    } else if (volRatio > 1.2) {
+        const recentChange = closes[li] - closes[li - 5];
+        if (recentChange > 0) {
+            bullScore += 1;
+            bandarSignals.push(`📈 Volume di atas normal (${volRatio.toFixed(1)}x) + harga naik = akumulasi ringan`);
+        } else {
+            bearScore += 1;
+            bandarSignals.push(`📉 Volume di atas normal (${volRatio.toFixed(1)}x) + harga turun = distribusi ringan`);
+        }
+    } else if (volRatio < 0.5) {
+        bandarSignals.push(`💤 Volume sangat rendah (${volRatio.toFixed(1)}x normal) - bandar sideway / menunggu`);
+    } else {
+        bandarSignals.push(`⚪ Volume normal (${volRatio.toFixed(1)}x) - tidak ada aktivitas bandar signifikan`);
+    }
+
+    // b) OBV (On Balance Volume) - detect accumulation/distribution
+    let obv = 0;
+    for (let i = 1; i < closes.length; i++) {
+        if (closes[i] > closes[i - 1]) obv += volumes[i];
+        else if (closes[i] < closes[i - 1]) obv -= volumes[i];
+    }
+    const obv20 = obv - (closes.length > 20 ? calculateOBV(closes.slice(0, -20), volumes.slice(0, -20)) : 0);
+    if (obv20 > 0) {
+        bullScore += 2;
+        bandarSignals.push('✅ OBV naik - uang masuk (akumulasi)');
+    } else if (obv20 < 0) {
+        bearScore += 2;
+        bandarSignals.push('❌ OBV turun - uang keluar (distribusi)');
+    }
+
+    // c) Price-Volume Trend (PVT)
+    let pvt = 0;
+    for (let i = 1; i < closes.length; i++) {
+        if (closes[i - 1] > 0) {
+            pvt += ((closes[i] - closes[i - 1]) / closes[i - 1]) * volumes[i];
+        }
+    }
+    if (pvt > 0) {
+        bullScore += 1;
+        bandarSignals.push('✅ PVT positif - tekanan beli dominan');
+    } else {
+        bearScore += 1;
+        bandarSignals.push('❌ PVT negatif - tekanan jual dominan');
+    }
+
+    // d) Candle pattern (last 3 candles)
+    if (candles.length >= 3) {
+        const c1 = candles[li - 2], c2 = candles[li - 1], c3 = candles[li];
+        const body3 = c3.close - c3.open;
+        const body2 = c2.close - c2.open;
+        const body1 = c1.close - c1.open;
+        
+        // 3 candle naik berturut-turut
+        if (body1 > 0 && body2 > 0 && body3 > 0) {
+            bullScore += 2;
+            bandarSignals.push('📈 3 candle bullish berturut-turut - momentum naik kuat');
+        }
+        // 3 candle turun berturut-turut
+        else if (body1 < 0 && body2 < 0 && body3 < 0) {
+            bearScore += 2;
+            bandarSignals.push('📉 3 candle bearish berturut-turut - momentum turun kuat');
+        }
+        // Hammer / reversal pattern
+        const lowerWick = c3.open - c3.low;
+        const body = Math.abs(c3.close - c3.open);
+        if (lowerWick > body * 2 && c3.close > c3.open) {
+            bullScore += 2;
+            bandarSignals.push('🔨 Hammer pattern - reversal bullish likely');
+        }
+        const upperWick = c3.high - Math.max(c3.close, c3.open);
+        if (upperWick > body * 2 && c3.close < c3.open) {
+            bearScore += 2;
+            bandarSignals.push('📛 Shooting star - reversal bearish likely');
+        }
+    }
+
+    // e) Volume spike detection
+    const lastVol = volumes[li];
+    const prevAvgVol = volumes.slice(-10, -1).reduce((a, b) => a + b, 0) / 9;
+    if (lastVol > prevAvgVol * 2) {
+        const lastBody = closes[li] - candles[li].open;
+        if (lastBody > 0) {
+            bullScore += 2;
+            bandarSignals.push(`🚀 Volume spike (${(lastVol / prevAvgVol).toFixed(1)}x) + candle bullish = BREAKOUT naik`);
+        } else {
+            bearScore += 2;
+            bandarSignals.push(`🚨 Volume spike (${(lastVol / prevAvgVol).toFixed(1)}x) + candle bearish = BREAKDOWN turun`);
+        }
+    }
+
+    // ========== 3. CALCULATE PREDICTION ==========
+    const totalScore = bullScore + bearScore;
+    const bullPct = totalScore > 0 ? (bullScore / totalScore) * 100 : 50;
+    const bearPct = totalScore > 0 ? (bearScore / totalScore) * 100 : 50;
+
+    let direction, directionIcon, directionColor;
+    if (bullPct >= 70) { direction = 'NAIK'; directionIcon = '🚀'; directionColor = 'text-green-400'; }
+    else if (bullPct >= 55) { direction = 'NAIK'; directionIcon = '📈'; directionColor = 'text-green-400'; }
+    else if (bearPct >= 70) { direction = 'TURUN'; directionIcon = '📉'; directionColor = 'text-red-400'; }
+    else if (bearPct >= 55) { direction = 'TURUN'; directionIcon = '🔴'; directionColor = 'text-red-400'; }
+    else { direction = 'NETRAL'; directionIcon = '⚪'; directionColor = 'text-yellow-400'; }
+
+    const confidence = Math.max(bullPct, bearPct);
+
+    // Target harga (berdasarkan ATR)
+    const atrV = atr[li] || (price * 0.03);
+    let targetPrice, targetPct;
+    if (direction === 'NAIK') {
+        targetPrice = price + (atrV * 2);
+        targetPct = ((targetPrice - price) / price * 100);
+    } else if (direction === 'TURUN') {
+        targetPrice = price - (atrV * 2);
+        targetPct = ((targetPrice - price) / price * 100);
+    } else {
+        targetPrice = price;
+        targetPct = 0;
+    }
+
+    // Support/Resistance (dari BB atau recent high/low)
+    const support = bbL || Math.min(...closes.slice(-20));
+    const resistance = bbU || Math.max(...closes.slice(-20));
+
+    // Summary
+    let summary = '';
+    if (direction === 'NAIK') {
+        summary = `Prediksi: NAIK (${confidence.toFixed(0)}% confidence). Bullish signals: ${bullScore}, Bearish: ${bearScore}. Target: ${formatPrice(targetPrice, currency)} (+${targetPct.toFixed(1)}%). Bandar: ${volRatio > 1.2 ? 'Aktif akumulasi' : 'Normal'}.`;
+    } else if (direction === 'TURUN') {
+        summary = `Prediksi: TURUN (${confidence.toFixed(0)}% confidence). Bearish signals: ${bearScore}, Bullish: ${bullScore}. Target: ${formatPrice(targetPrice, currency)} (${targetPct.toFixed(1)}%). Bandar: ${volRatio > 1.2 ? 'Aktif distribusi' : 'Normal'}.`;
+    } else {
+        summary = `Prediksi: NETRAL. Bullish: ${bullScore}, Bearish: ${bearScore}. Harga likely sideway. Tunggu konfirmasi breakout.`;
+    }
+
+    return {
+        direction, directionIcon, directionColor, confidence,
+        targetPrice, targetPct, support, resistance,
+        techSignals, bandarSignals, summary,
+        bullScore, bearScore, volRatio, currency,
+    };
+}
+
+function calculateOBV(closes, volumes) {
+    let obv = 0;
+    for (let i = 1; i < closes.length; i++) {
+        if (closes[i] > closes[i - 1]) obv += volumes[i] || 0;
+        else if (closes[i] < closes[i - 1]) obv -= volumes[i] || 0;
+    }
+    return obv;
+}
+
+function formatPrice(price, currency) {
+    if (currency === 'IDR') return 'Rp ' + price.toLocaleString('id-ID', { maximumFractionDigits: 0 });
+    return '$ ' + price.toFixed(2);
+}
+
+function updatePredictionPanel(pred) {
+    if (!pred) {
+        document.getElementById('predDirection').textContent = '—';
+        document.getElementById('predDirectionIcon').textContent = '⏳';
+        document.getElementById('predConfidence').textContent = '—';
+        document.getElementById('predConfidenceBar').style.width = '0%';
+        document.getElementById('predTarget').textContent = '—';
+        document.getElementById('predTargetPct').textContent = '—';
+        document.getElementById('predSupport').textContent = '—';
+        document.getElementById('predResistance').textContent = '—';
+        document.getElementById('predTechSignals').innerHTML = '<p>Menunggu data...</p>';
+        document.getElementById('predBandarSignals').innerHTML = '<p>Menunggu data...</p>';
+        document.getElementById('predSummary').innerHTML = '<p>Menunggu analisis...</p>';
+        return;
+    }
+
+    // Direction
+    document.getElementById('predDirection').textContent = pred.direction;
+    document.getElementById('predDirection').className = 'text-2xl font-bold ' + pred.directionColor;
+    document.getElementById('predDirectionIcon').textContent = pred.directionIcon;
+
+    // Confidence
+    document.getElementById('predConfidence').textContent = pred.confidence.toFixed(0) + '%';
+    document.getElementById('predConfidenceBar').style.width = pred.confidence + '%';
+
+    // Target
+    const targetStr = formatPrice(pred.targetPrice, pred.currency);
+    const pctStr = (pred.targetPct >= 0 ? '+' : '') + pred.targetPct.toFixed(1) + '%';
+    const targetColor = pred.targetPct >= 0 ? 'text-green-400' : 'text-red-400';
+    document.getElementById('predTarget').textContent = targetStr;
+    document.getElementById('predTarget').className = 'text-xl font-bold ' + targetColor;
+    document.getElementById('predTargetPct').textContent = pctStr;
+    document.getElementById('predTargetPct').className = 'text-[10px] ' + targetColor;
+
+    // Support/Resistance
+    document.getElementById('predSupport').textContent = formatPrice(pred.support, pred.currency);
+    document.getElementById('predResistance').textContent = formatPrice(pred.resistance, pred.currency);
+
+    // Tech signals
+    document.getElementById('predTechSignals').innerHTML = pred.techSignals.map(s => `<div>${s}</div>`).join('');
+
+    // Bandar signals
+    document.getElementById('predBandarSignals').innerHTML = pred.bandarSignals.map(s => `<div>${s}</div>`).join('');
+
+    // Summary
+    document.getElementById('predSummary').innerHTML = `<p>${pred.summary}</p>`;
+}
+
 // ===== PRICE TICKER UPDATE (v19) =====
 function updatePriceTicker(candles, meta) {
     if (!candles || candles.length === 0) return;
@@ -3802,6 +4167,7 @@ async function runFullAnalysis() {
     resetFinalPanelUI();
     resetTechnicalPanelUI();
     resetPriceTicker();
+    updatePredictionPanel(null);
 
     l.style.display = 'flex';
     l.innerHTML = `<div class="text-center"><div class="inline-block w-8 h-8 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mb-2"></div><p class="text-xs text-gray-500">Memuat data ${analysisSymbol}...</p></div>`;
@@ -3851,6 +4217,9 @@ async function runFullAnalysis() {
         updateYahooChart(candles, lastTechAnalysis.ind);
         updateTechnicalPanel(lastTechAnalysis);
         updatePriceTicker(candles, meta);
+        // Generate prediction
+        const pred = generatePrediction(candles, lastTechAnalysis.ind, meta);
+        updatePredictionPanel(pred);
         l.style.display = 'none';
     } catch (e) {
         l.innerHTML = `<div class="text-center"><p class="text-xs text-red-400">Gagal memuat teknikal ${analysisSymbol}</p><p class="text-xs text-gray-500 mt-1">${e.message}</p></div>`;
